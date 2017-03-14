@@ -1,3 +1,9 @@
+'''
+Authors: Shaon Ghosh, Shasvath Kapadia, Deep Chatterjee
+Email: ghosh4@uwm.edu
+'''
+
+
 import numpy as np
 import pylab as pl
 import pickle
