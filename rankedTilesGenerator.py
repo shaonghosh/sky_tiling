@@ -225,6 +225,24 @@ class RankedTileGenerator:
 		return [ranked_galaxies, galaxy_probs]
 		
 ####################END OF CLASS METHODS########################
+
+
+def evolve_abs_Mag(dt, model, offset=0):	### UNDERDEVELOPMENT ###
+	'''
+	METHOD	:: This method takes as input the light curve model and the time
+			   since the merger and outputs the absolute magnitude of the 
+			   source.
+			   
+	dt 	 	:: Time since merger
+	model	:: The light cirve model. Right now only one model (NSNS_MNmodel1_FRDM_r)
+	offset	:: (Optional) The offset of the peak of the light curve from the merger.
+	'''
+
+	data = np.recfromtxt(model, names=True)
+	s = interpolate.UnivariateSpline(data['time'], data['magnitude'], k=5)
+	mag = s(dt - offset)
+
+	
 def gaussian_distribution_function(x, mu, sigma):
 		'''
 		METHOD	:: Creates the gaussian function corresponding to the
