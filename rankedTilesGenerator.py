@@ -223,6 +223,28 @@ class RankedTileGenerator:
 		galaxy_probs = galaxy_probs[order]
 		
 		return [ranked_galaxies, galaxy_probs]
+
+	def integrationTime(self, T_obs, pValTiles=None):
+		'''
+		METHOD :: This method accepts the probability values of the ranked tiles, the 
+			  total observation time and the rank of the source tile. It returns 
+			  the array of time to be spent in each tile which is determined based
+			  on the localizaton probability of the tile. 
+				  
+		pValTiles :: The probability value of the ranked tiles. Obtained from ZTF_RT 
+					 output
+		T_obs     :: Total observation time available for the follow-up.
+		'''
+		if pValTiles is None:
+			pValTiles = self.allTiles_probs_sorted
+		t_tiles = pValTiles * T_obs ### Time spent in each tile if not constrained
+		t_tiles[t_tiles > 1200.0] = 1200.0 ### Upper limit of exposure time
+		t_tiles[t_tiles < 60] = 60.0 ### Lower limit of exposure time
+		Obs = np.cumsum(t_tiles) <= T_obs ### Tiles observable in T_obs seconds
+		time_per_tile = t_tiles[Obs] ### Actual time spent per tile
+		
+		return time_per_tile
+
 		
 ####################END OF CLASS METHODS########################
 
