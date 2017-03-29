@@ -13,8 +13,14 @@ import healpy as hp
 from scipy import interpolate
 
 import time
-#from AllSkyMap_basic import AllSkyMap
+import datetime
 
+from astropy.time import Time
+from astropy import units as u
+from astropy.coordinates import get_sun
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+
+#from AllSkyMap_basic import AllSkyMap
 
 
 
@@ -29,7 +35,7 @@ class RankedTileGenerator:
 							512:'preComputed_pixel_indices_512.dat',
 							1024:'preComputed_pixel_indices_1024.dat',
 							2048:'preComputed_pixel_indices_2048.dat'}
-							
+				
 
 	def sourceTile(self, ra, dec, tiles):
 		'''
@@ -56,7 +62,6 @@ class RankedTileGenerator:
 		index = np.argmin(s) ### minimum angular distance index
 
 		return ID[index] - 1 ### Since the indexing begins with 1.
-
 
 	
 	def searchedArea(self, ra, dec, resolution=None):
@@ -105,7 +110,6 @@ class RankedTileGenerator:
 		searchedArea = index*hp.nside2pixarea(resolution, degrees=True)
 		return [searchedArea, coveredProb]
 
-
 	
 	def ZTF_RT(self, resolution=None, verbose=False):
 		'''
@@ -148,8 +152,6 @@ class RankedTileGenerator:
 
 		
 		return [tile_index_sorted, allTiles_probs_sorted]
-		
-
 
 
 	def plot(self, tiles, ra, dec, resolution=None, CI=0.9):
@@ -244,7 +246,41 @@ class RankedTileGenerator:
 		time_per_tile = t_tiles[Obs] ### Actual time spent per tile
 		
 		return time_per_tile
+	
+	
+############ UNDER CONSTRUCTION ############
+	
+class scheduler(RankedTileGenerator):
+	def __init__(self, skymapFile, site='Palomar', 
+				 tileCoord='ZTF_tiles_set1_nowrap_indexed.dat', utcoffset = -8.0*u.hour):
 
+		self.Observatory = EarthLocation.of_site(site)
+		tileData = np.recfromtxt(tileCoord, names=True)
+		
+		tileObj = RankedTileGenerator(skymapFile)
+		[tileIndices, self.tileProbs] = tileObj.ZTF_RT()
+
+		self.tiles = SkyCoord(ra = tileData['ra_center'][tileIndices]*u.degree, 
+					    dec = tileData['dec_center'][tileIndices]*u.degree, 
+					    frame = 'icrs') ### Tile(s)
+		self.utcoffset = utcoffset
+		
+
+	def tileVisibility(self, t, gps=False):
+		'''
+		METHOD	:: This method takes as input the time (gps or mjd) of observation
+				   and the observatory site name, and returns the alt and az of the 
+				   ranked tiles. It also returns the alt and az of the sun.
+		t	    :: The time at which observation is made. Default is mjd. If time is 
+				   given in gps then set gps to True.
+
+		'''
+		if gps: time = Time(t, format='gps') ### If time is given in GPS format
+		else: time = Time(t, format='mjd') ### else time is assumed in mjd format
+		altAz_tile = self.tiles.transform_to(AltAz(obstime=time, location=self.Observatory))
+		altAz_sun = get_sun(time).transform_to(AltAz(obstime=time, location=self.Observatory))
+		
+		return [altAz_tile, self.tileProbs, altAz_sun]
 		
 ####################END OF CLASS METHODS########################
 
