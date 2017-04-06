@@ -20,7 +20,7 @@ from astropy import units as u
 from astropy.coordinates import get_sun
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 
-#from AllSkyMap_basic import AllSkyMap
+# from AllSkyMap_basic import AllSkyMap
 
 
 
@@ -250,20 +250,31 @@ class RankedTileGenerator:
 	
 ############ UNDER CONSTRUCTION ############
 	
-class scheduler(RankedTileGenerator):
+class Scheduler(RankedTileGenerator):
+	'''
+	The scheduler class: Inherits from the RankedTileGenerator class. If no attribute 
+	is supplied while creating schedular objects, a default instance of ZTF scheduler 
+	is created. To generate scheduler for other telescopes use the corresponding site
+	names which can be obtaine from astropy.coordinates.EarthLocation.get_site_names().
+	The tile tile coordinate file also needs to be supplied to the variable tileCoord.
+	This file needs to have at least three columns, the first being an ID (1, 2, ...),
+	the second should be the tile center's ra value and the third the dec value of the 
+	same. The utcoffset is the time difference between UTC and the site in hours. 
+	'''
 	def __init__(self, skymapFile, site='Palomar', 
-				 tileCoord='ZTF_tiles_set1_nowrap_indexed.dat', utcoffset = -8.0*u.hour):
+				 tileCoord='ZTF_tiles_set1_nowrap_indexed.dat', utcoffset = -7.0):
 
 		self.Observatory = EarthLocation.of_site(site)
 		tileData = np.recfromtxt(tileCoord, names=True)
+		self.skymapfile = skymapFile
 		
 		tileObj = RankedTileGenerator(skymapFile)
-		[tileIndices, self.tileProbs] = tileObj.ZTF_RT()
+		[self.tileIndices, self.tileProbs] = tileObj.ZTF_RT()
 
-		self.tiles = SkyCoord(ra = tileData['ra_center'][tileIndices]*u.degree, 
-					    dec = tileData['dec_center'][tileIndices]*u.degree, 
+		self.tiles = SkyCoord(ra = tileData['ra_center'][self.tileIndices]*u.degree, 
+					    dec = tileData['dec_center'][self.tileIndices]*u.degree, 
 					    frame = 'icrs') ### Tile(s)
-		self.utcoffset = utcoffset
+		self.utcoffset = utcoffset*u.hour
 		
 
 	def tileVisibility(self, t, gps=False):
@@ -280,8 +291,82 @@ class scheduler(RankedTileGenerator):
 		altAz_tile = self.tiles.transform_to(AltAz(obstime=time, location=self.Observatory))
 		altAz_sun = get_sun(time).transform_to(AltAz(obstime=time, location=self.Observatory))
 		
-		return [altAz_tile, self.tileProbs, altAz_sun]
+		isSunDown = altAz_sun.alt.value < -18.0 ### Checks if it is past twilight.
+		whichTilesUp = altAz_tile.alt.value > 20.0  ### Checks which tiles are up		
 		
+# 		return [altAz_tile, self.tileProbs, altAz_sun]
+		return [self.tileIndices[whichTilesUp], self.tileProbs[whichTilesUp], altAz_sun]
+		
+		
+	def observationSchedule(self, duration, eventTime, integrationTime=120,
+							observedTiles=None, plot=False, verbose=False):
+		'''
+		METHOD	:: This method takes the duration of observation, time of the GW trigger
+				   integration time per tile as input and outputs the observation
+				   schedule.
+				   
+		duration   		 :: Total duration of the observation in seconds.
+		eventTime  		 :: The gps time of the time of the GW trigger.
+		integrationTime  :: Time spent per tile in seconds (default == 120 seconds)
+		observedTiles	 :: (Future development) Array of tile indices that has been 
+							observed in n earlier epoch
+		plot			 :: (optional) Plots the tile centers that are observed.
+		verbose			 :: Toggle verbose flag for print statements.
+				   
+		
+		'''
+		
+		if plot:
+			from AllSkyMap_basic import AllSkyMap
+			
+						
+
+		observedTime = 0 ## Initiating the observed times
+		scheduled = np.array([]) ## tile indices scheduled for observation
+		ObsTimes = []
+		pVal_observed = []
+		ii = 0
+		observed_count = 0
+		while observedTime <= duration:
+			dt = integrationTime * ii
+			[tileIndices, tileProbs, altAz_sun] = self.tileVisibility(eventTime + dt,
+																		 gps=True)
+			localTime = Time(eventTime + dt, format='gps') + self.utcoffset
+			
+			if altAz_sun.alt.value < -18.0: ### Sun below horizon
+				observed_count += 1
+				observedTime += integrationTime ### Augment observed time
+				if verbose: 
+					print str(localTime.utc.datetime) + ': Observation mode'
+
+				for jj in np.arange(len(tileIndices)):
+					if tileIndices[jj] not in scheduled:
+					#if ~np.in1d(tileIndices[jj], scheduled):
+						scheduled = np.append(scheduled, tileIndices[jj])
+						ObsTimes.append(localTime)
+						pVal_observed.append(tileProbs[jj])
+						break
+
+			else:
+				if verbose: print str(localTime.utc.datetime) + ': Sun above the horizon'
+			
+			ii += 1
+		for ii in np.arange(len(scheduled)):
+			print str(ObsTimes[ii].utc.datetime) + '\t' + str(int(scheduled[ii]))
+			
+		return [scheduled.astype('int'), pVal_observed]
+
+				
+
+
+
+
+
+
+
+
+
+
 ####################END OF CLASS METHODS########################
 
 
@@ -292,7 +377,7 @@ def evolve_abs_Mag(dt, model, offset=0):	### UNDERDEVELOPMENT ###
 			   source.
 			   
 	dt 	 	:: Time since merger
-	model	:: The light cirve model. Right now only one model (NSNS_MNmodel1_FRDM_r)
+	model	:: The light curve model. Right now only one model (NSNS_MNmodel1_FRDM_r)
 	offset	:: (Optional) The offset of the peak of the light curve from the merger.
 	'''
 
