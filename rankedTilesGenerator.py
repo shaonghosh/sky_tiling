@@ -1,8 +1,33 @@
-'''
-Authors: Shaon Ghosh, Shasvath Kapadia, Deep Chatterjee
-Email: ghosh4@uwm.edu
-'''
+# Copyright (C) 2017 Shaon Ghosh, David Kaplan, Shasvath Kapadia, Deep Chatterjee
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""
+
+Creates ranked tiles for a given gravitational wave trigger. Sample steps are below:
+
+
+tileObj = rankedTilesGenerator.RankedTileGenerator('bayestar.fits.gz')
+[ranked_tile_index, ranked_tile_probs] = tileObj.ZTF_RT(resolution=512)
+
+This gives the ranked tile indices and their probabilities for the bayestar sky-map.
+The resolution is 512, thus ud_grading to this value from the actual sky-map resolution.
+The code expects the file ZTF_tiles_set1_nowrap_indexed.dat and the pickled file 
+preComputed_pixel_indices_512.dat to be in the same path. 
+
+"""
 
 import numpy as np
 import pylab as pl
