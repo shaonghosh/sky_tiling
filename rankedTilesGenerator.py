@@ -85,8 +85,8 @@ class RankedTileGenerator:
 		
 		
 		self.preCompDictFiles = {64:preComputed_64, 128:preComputed_128,
-								256:preComputed_256, 512:preComputed_512,
-								1024:preComputed_1024, 2048:preComputed_2048}
+					256:preComputed_256, 512:preComputed_512,
+					1024:preComputed_1024, 2048:preComputed_2048}
 				
 
 	def sourceTile(self, ra, dec, tiles):
@@ -97,10 +97,10 @@ class RankedTileGenerator:
 		ra		   :: Right ascension of the source in degrees
 		dec		   :: Declination angle of the source in degrees
 		tiles	   :: The tile coordinate file (in the following format)
-						ID	ra_center	dec_center	
-						1  24.714290	-85.938460
-						2  76.142860	-85.938460
-						...
+			      ID	ra_center	dec_center	
+			      1  	24.714290	-85.938460
+			      2  	76.142860	-85.938460
+			      ...
 		'''
 		tileData = np.recfromtxt(tiles, names=True)
 		Dec_tile = tileData['dec_center']
@@ -119,18 +119,17 @@ class RankedTileGenerator:
 	def searchedArea(self, ra, dec, resolution=None):
 		'''
 		METHOD     :: This method takes the position of the injected 
-					  event and the sky-map. It returns the searched 
-					  area of the sky-map to reach to the source lo-
-					  cation. The searched area constitutes both the
-					  total area (sq. deg) that needed to be search-
-					  ed to reach the source location, and the total
-					  localization probability covered in the proce-
-					  ss.
+			      event and the sky-map. It returns the searched 
+			      area of the sky-map to reach to the source lo-
+			      cation. The searched area constitutes both the
+			      total area (sq. deg) that needed to be search-
+			      ed to reach the source location, and the total
+			      localization probability covered in the process.
 					  
 		ra		   :: Right ascension of the source in degrees
 		dec		   :: Declination angle of the source in degrees
-		resolution :: The value of the nside, if not supplied, 
-					  the default skymap is used.
+		resolution 	   :: The value of the nside, if not supplied, 
+				      the default skymap is used.
 		'''
 		if not resolution:
 			resolution = self.nside
@@ -166,13 +165,13 @@ class RankedTileGenerator:
 	def getRankedTiles(self, resolution=None, verbose=False):
 		'''
 		METHOD		:: This method returns two numpy arrays, the first
-					   contains the tile indeces of ZTF and the second
-					   contains the probability values of the corresp-
-					   onding tiles. The tiles are sorted based on th-
-					   eir probability values.
+				   contains the tile indices of telescope and the second
+				   contains the probability values of the corresponding 
+				   tiles. The tiles are sorted based on their probability 
+				   values.
 		
 		resolution  :: The value of the nside, if not supplied, 
-					   the default skymap is used.
+			       the default skymap is used.
 		'''
 		if not resolution:
 			resolution = self.nside
@@ -214,11 +213,14 @@ class RankedTileGenerator:
 		ranked_tile_indices    :: The index of he ranked-tiles
 		allTiles_probs_sorted  :: The probabilities of the ranked-tiles
 		tileFile    :: The file with tile indices and centers
-					ID	ra_center	dec_center	
-					1  24.714290	-85.938460
-					2  76.142860	-85.938460
+			       ID	ra_center	dec_center	
+			       1  	24.714290	-85.938460
+			       2  	76.142860	-85.938460
+		
+		FOV		:: Field of view of the telescopes. If not supplied,
+				   tile boundaries will not be plotted.
 
-		resolution  :: The resolution of the skymap to be used.
+		resolution  	:: The resolution of the skymap to be used.
 		tileEdges	:: Allows plotting of the tile edges. Default is False.
 		'''			
 
