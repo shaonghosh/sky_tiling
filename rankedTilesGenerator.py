@@ -70,17 +70,17 @@ class RankedTileGenerator:
 		npix = len(self.skymap)
 		self.nside = hp.npix2nside(npix)
 		if preComputed_64 is None:
-			preComputed_64 = 'preComputed_pixel_indices_64.dat'
+			preComputed_64 = 'preComputed_ZTF_pixel_indices_64.dat'
 		if preComputed_128 is None:
-			preComputed_128 = 'preComputed_pixel_indices_128.dat'
+			preComputed_128 = 'preComputed_ZTF_pixel_indices_128.dat'
 		if preComputed_256 is None:
-			preComputed_256 = 'preComputed_pixel_indices_256.dat'
+			preComputed_256 = 'preComputed_ZTF_pixel_indices_256.dat'
 		if preComputed_512 is None:
-			preComputed_512 = 'preComputed_pixel_indices_512.dat'
+			preComputed_512 = 'preComputed_ZTF_pixel_indices_512.dat'
 		if preComputed_1024 is None:
-			preComputed_1024 = 'preComputed_pixel_indices_1024.dat'
+			preComputed_1024 = 'preComputed_ZTF_pixel_indices_1024.dat'
 		if preComputed_2048 is None:
-			preComputed_2048 = 'preComputed_pixel_indices_2048.dat'
+			preComputed_2048 = 'preComputed_ZTF_pixel_indices_2048.dat'
 		
 		
 		
