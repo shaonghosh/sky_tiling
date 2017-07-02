@@ -2,7 +2,9 @@
 The main code is the rankedTileGeneratory.py which has all the necessary methods required to find the set of tiles required to cover a given sky-loclziation. Here are the list of methods and what they do:
 
 Create a tile object as follows:
+
 skymap_file = 'bayestar.fits.gz' ## Name of the GW sky-localization fits file.
+
 tileObj = rankedTilesGenerator.RankedTileGenerator(skymap_file)
 
 To construct the ranked tiles for any given telescope, we need tile-pixel association files for that telescope. Examples of such files could be obtained from NEMO cluster of UWM: /home/shaon/Tiling_Strategy/precompute_files . These are for the Atlas telescope.
