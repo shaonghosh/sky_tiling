@@ -206,8 +206,8 @@ class RankedTileGenerator:
 		return [tile_index_sorted, allTiles_probs_sorted]
 
 
-	def plotTiles(self, ranked_tile_indices, allTiles_probs_sorted, FOV=None, 
-				  tileFile, resolution=None, tileEdges=False, CI=0.9):
+	def plotTiles(self, ranked_tile_indices, allTiles_probs_sorted, tileFile, FOV=None,
+				  resolution=None, tileEdges=False, CI=0.9):
 		'''
 		METHOD 	:: This method plots the ranked-tiles on a hammer projection
 				   skymap. 
