@@ -7,7 +7,7 @@ skymap_file = 'bayestar.fits.gz' ## Name of the GW sky-localization fits file.
 
 tileObj = rankedTilesGenerator.RankedTileGenerator(skymap_file)
 
-To construct the ranked tiles for any given telescope, we need tile-pixel association files for that telescope. Examples of such files could be obtained from NEMO cluster of UWM: /home/shaon/Tiling_Strategy/precompute_files . These are for the Atlas telescope.
+To construct the ranked tiles for any given telescope, we need tile-pixel association files for that telescope. For testing purpose we include two such files in this repository, preComputed_ATLAS_pixel_indices_256.dat and preComputed_ZTF_pixel_indices_256.dat. A larger number of such files are available in NEMO cluster of UWM: /home/shaon/Tiling_Strategy/precompute_files . These are for the Atlas telescope.
 
 "getRankedTiles" method generates the ranked tiles for any telescope whose precompted tiles-pixel maps are given.
 Eample Command: [ranked_tile_indices, ranked_tile_probs] = tileObj.getRankedTiles()
