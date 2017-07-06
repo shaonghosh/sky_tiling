@@ -18,6 +18,12 @@
 ehthumbs.db
 Thumbs.db
 
+# Distribution/packaging
+######################
+*.egg-info/
+dist/
+build/
+
 # Logs and databases #
 ######################
 *.log
