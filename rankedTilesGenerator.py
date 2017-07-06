@@ -210,7 +210,7 @@ class RankedTileGenerator:
 		return [tile_index_sorted, allTiles_probs_sorted]
 
 
-	def plotTiles(self, ranked_tile_indices, allTiles_probs_sorted, tileFile, FOV=None,
+	def plotTiles(self, ranked_tile_indices, allTiles_probs_sorted, tileFile=None, FOV=None,
 				  resolution=None, tileEdges=False, CI=0.9, save=False):
 		'''
 		METHOD 	:: This method plots the ranked-tiles on a hammer projection
@@ -270,6 +270,8 @@ class RankedTileGenerator:
 			m.label_meridians(lons, fontsize=16, vnudge=1, halign='left', hnudge=-1) 
 		m.plot(RAP_map, DecP_map, 'r.', markersize=3, alpha=0.1) 
 
+		if tileFile is None:
+			tileFile = self.configParser.get('tileFiles', 'tileFile')
 		tileData = np.recfromtxt(tileFile, names=True)
 		
 		Dec_tile = tileData['dec_center']
