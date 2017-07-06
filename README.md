@@ -34,6 +34,10 @@ Other methods:
                     source and limiting magnitude - time data for the telescope, 
                     this function gives the detectiability of the source
 
-
+####################
+Setting-up the run:
+####################
+First run the setup.py script. This will generate the command to include sky_tiling to your environment's pythonpath.
+There is a config file in the tests. Running the test.py script in the tests directory will give the environment setting command. The config file in the tests directory should help in running the test script (test_sky_tiling.py) in the test directory. For general running, copy the config file to a directory where you would want to run the script. Change the path's in the config file to point to the right paths for the preComputed_*_pixel_indices*.dat files that are present in tile_pixel_maps diectory of the installation.
 
 
