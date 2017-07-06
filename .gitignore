@@ -41,3 +41,10 @@ build/
 *.jar
 *.rar
 *.zip
+
+# Tests #
+#########
+tests/setup.sh
+tests/*.png
+tests/*.pdf
+
