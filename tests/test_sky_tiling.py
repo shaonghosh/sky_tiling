@@ -1,7 +1,7 @@
 import numpy as np
 import rankedTilesGenerator
 
-skymap_file = '/Users/ghosh4/PROJECT/Research/sky_tiling/utilities/bayestar.fits.gz'
+skymap_file = 'bayestar.fits.gz'
 tile_file = '/Users/ghosh4/PROJECT/Research/sky_tiling/tile_center_files/BlackGEM_tiles_indexed.dat'
 tile_file = None
 
