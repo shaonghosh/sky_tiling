@@ -36,6 +36,6 @@ Other methods:
 
 ### Setting-up the run ### 
 First run the setup.py script. This will generate the command to include sky_tiling to your environment's pythonpath.
-There is a config file in the tests. Running the test.py script in the tests directory will give the environment setting command. The config file in the tests directory should help in running the test script (test_sky_tiling.py) in the test directory. For general running, copy the config file to a directory where you would want to run the script. Change the path's in the config file to point to the right paths for the preComputed_*_pixel_indices*.dat files that are present in tile_pixel_maps diectory of the installation.
+There is a config file in the tests. Running the test.py script in the tests directory will give the environment setting command. The config file in the tests directory should help in running the test script (test_sky_tiling.py) in the test directory. For general running, copy the config file to a directory where you would want to run the script. Change the path's in the config file to point to the right paths for the preComputed_<telescope name>_pixel_indices_<resolution>.dat files that are present in tile_pixel_maps diectory of the installation. Also change the path to the tile center files in the [tileFiles] section of the ini file. The tile center file is present in the tile_center_files directory of the installation.
 
 
