@@ -23,6 +23,7 @@ Thumbs.db
 *.log
 *.sql
 *.sqlite
+.ipynb*
 
 # Packages #
 ############

@@ -274,26 +274,26 @@ class RankedTileGenerator:
 			tileEdges = False
 		for ii in ranked_tile_indices:
 
+			RAP_peak, DecP_peak = m(RA_tile[ii], Dec_tile[ii])
 			if tileEdges:
 				[dec_down, dec_up,
 				ra_down_left, ra_down_right, 
 				ra_up_left, ra_up_right] = getTileBounds(FOV, RA_tile[ii], Dec_tile[ii])
-			
-			RAP_peak, DecP_peak = m(RA_tile[ii], Dec_tile[ii])
-			
-			if tileEdges:
+				m.plot(RAP_peak, DecP_peak, 'k.', markersize=4, mew=1)
+
 				RAP1, DecP1 = m(ra_up_left, dec_up)
 				RAP2, DecP2 = m(ra_up_right, dec_up)
 				RAP3, DecP3 = m(ra_down_left, dec_down)
 				RAP4, DecP4 = m(ra_down_right, dec_down)
-
-			m.plot(RAP_peak, DecP_peak, 'ko', markersize=20, mew=1)
-		
-			if tileEdges:
+				
 				m.plot([RAP1, RAP2], [DecP1, DecP2],'k-', linewidth=4) 
 				m.plot([RAP2, RAP4], [DecP2, DecP4],'k-', linewidth=4) 
 				m.plot([RAP4, RAP3], [DecP4, DecP3],'k-', linewidth=4) 
 				m.plot([RAP3, RAP1], [DecP3, DecP1],'k-', linewidth=4) 
+
+			else:
+				m.plot(RAP_peak, DecP_peak, 'ko', markersize=20, mew=1)
+
 
 		pl.show()
 
