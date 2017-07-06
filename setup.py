@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 #
+import os
 
 DESCRIPTION = "Tools for generating ranked tiles of a square FOV telescopes"
 LONG_DESCRIPTION = """\
@@ -42,6 +43,7 @@ def check_dependencies():
 
    return install_requires
 
+
 if __name__ == "__main__":
 
     install_requires = check_dependencies()
@@ -79,3 +81,9 @@ if __name__ == "__main__":
               'Operating System :: Unix',
               'Operating System :: MacOS'],
       )
+dir = os.getcwd()
+exportText = 'export PYTHONPATH='+ dir +':${PYTHONPATH}'
+print '''\n***** sky_tiling is configured *****.
+Run the following in your terminal or put in your .bashrc'''
+print exportText
+

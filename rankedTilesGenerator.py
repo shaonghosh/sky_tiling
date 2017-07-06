@@ -30,16 +30,17 @@ preComputed_pixel_indices_512.dat to be in the same path.
 """
 
 
+import sys
+import time
+import pickle
+import datetime
 import numpy as np
 import pylab as pl
-import pickle
-import sys
 from math import ceil
-import healpy as hp
-from scipy import interpolate
 
-import time
-import datetime
+import healpy as hp
+import ConfigParser
+from scipy import interpolate
 
 from astropy.time import Time
 from astropy import units as u
@@ -63,25 +64,29 @@ def getTileBounds(FOV, ra_cent, dec_cent):
 
 
 class RankedTileGenerator:
-	def __init__(self, skymapfile, preComputed_64=None, preComputed_128=None, 
-				preComputed_256=None, preComputed_512=None, 
-				preComputed_1024=None, preComputed_2048=None):
+		
+	def __init__(self, skymapfile, configfile):
+		'''
+		skymapfile :: The GW sky-localization map for the event
+		path	   :: Path to the preCoputed files
+		preComputeFiles  :: A list of all the precompute files
+		'''
+		
+		self.configParser = ConfigParser.ConfigParser()
+		self.configParser.read(configfile)
+
+		preComputed_64 = self.configParser.get('pixelTileMap', 'preComputed_64')
+		preComputed_128 = self.configParser.get('pixelTileMap', 'preComputed_128')
+		preComputed_256 = self.configParser.get('pixelTileMap', 'preComputed_256')
+		preComputed_512 = self.configParser.get('pixelTileMap', 'preComputed_512')
+		preComputed_1024 = self.configParser.get('pixelTileMap', 'preComputed_1024')
+		preComputed_2048 = self.configParser.get('pixelTileMap', 'preComputed_2048')
+		
+
+		
 		self.skymap = hp.read_map(skymapfile, verbose=False)
 		npix = len(self.skymap)
 		self.nside = hp.npix2nside(npix)
-		if preComputed_64 is None:
-			preComputed_64 = 'preComputed_ZTF_pixel_indices_64.dat'
-		if preComputed_128 is None:
-			preComputed_128 = 'preComputed_ZTF_pixel_indices_128.dat'
-		if preComputed_256 is None:
-			preComputed_256 = 'preComputed_ZTF_pixel_indices_256.dat'
-		if preComputed_512 is None:
-			preComputed_512 = 'preComputed_ZTF_pixel_indices_512.dat'
-		if preComputed_1024 is None:
-			preComputed_1024 = 'preComputed_ZTF_pixel_indices_1024.dat'
-		if preComputed_2048 is None:
-			preComputed_2048 = 'preComputed_ZTF_pixel_indices_2048.dat'
-		
 		
 		
 		self.preCompDictFiles = {64:preComputed_64, 128:preComputed_128,
@@ -206,7 +211,7 @@ class RankedTileGenerator:
 
 
 	def plotTiles(self, ranked_tile_indices, allTiles_probs_sorted, tileFile, FOV=None,
-				  resolution=None, tileEdges=False, CI=0.9):
+				  resolution=None, tileEdges=False, CI=0.9, save=False):
 		'''
 		METHOD 	:: This method plots the ranked-tiles on a hammer projection
 				   skymap. 
@@ -226,6 +231,7 @@ class RankedTileGenerator:
 
 		from utilities import AllSkyMap_basic
 		import pylab as pl
+
 		
 		skymap = self.skymap
 		if resolution:
@@ -247,8 +253,9 @@ class RankedTileGenerator:
 		pVal_CI = pVal[include]
 
 
-		pl.figure(figsize=(80,70))
-		pl.rcParams.update({'font.size': 60})
+		if save:
+			pl.figure(figsize=(80,70))
+			pl.rcParams.update({'font.size': 60})
 		
 		m = AllSkyMap_basic.AllSkyMap(projection='hammer')
 		RAP_map, DecP_map = m(ra_CI, dec_CI) 
@@ -257,7 +264,10 @@ class RankedTileGenerator:
 		m.drawmeridians(np.arange(0.,420.,30.), color='grey')
 		m.drawmapboundary(fill_color='white')
 		lons = np.arange(-150,151,30)
-		m.label_meridians(lons, fontsize=60, vnudge=1, halign='left', hnudge=-1) 
+		if save:
+			m.label_meridians(lons, fontsize=60, vnudge=1, halign='left', hnudge=-1)
+		else:
+			m.label_meridians(lons, fontsize=16, vnudge=1, halign='left', hnudge=-1) 
 		m.plot(RAP_map, DecP_map, 'r.', markersize=3, alpha=0.1) 
 
 		tileData = np.recfromtxt(tileFile, names=True)
@@ -285,17 +295,25 @@ class RankedTileGenerator:
 				RAP2, DecP2 = m(ra_up_right, dec_up)
 				RAP3, DecP3 = m(ra_down_left, dec_down)
 				RAP4, DecP4 = m(ra_down_right, dec_down)
-				
-				m.plot([RAP1, RAP2], [DecP1, DecP2],'k-', linewidth=4) 
-				m.plot([RAP2, RAP4], [DecP2, DecP4],'k-', linewidth=4) 
-				m.plot([RAP4, RAP3], [DecP4, DecP3],'k-', linewidth=4) 
-				m.plot([RAP3, RAP1], [DecP3, DecP1],'k-', linewidth=4) 
+				if save:
+					lw = 4
+				else:
+					lw = 1
+				m.plot([RAP1, RAP2], [DecP1, DecP2],'k-', linewidth=lw) 
+				m.plot([RAP2, RAP4], [DecP2, DecP4],'k-', linewidth=lw) 
+				m.plot([RAP4, RAP3], [DecP4, DecP3],'k-', linewidth=lw) 
+				m.plot([RAP3, RAP1], [DecP3, DecP1],'k-', linewidth=lw) 
 
 			else:
-				m.plot(RAP_peak, DecP_peak, 'ko', markersize=20, mew=1)
+				m.plot(RAP_peak, DecP_peak, 'ko', markersize=5*lw, mew=1)
 
-
-		pl.show()
+		if save:
+			filenametag = self.configParser.get('plot', 'filenametag')
+			extension = self.configParser.get('plot', 'extension')
+			pl.savefig('skyTiles_' + filenametag + '.' + extension)
+	
+		else:
+			pl.show()
 
 	def rankGalaxies2D(self, catalog, resolution=None):
 		'''
