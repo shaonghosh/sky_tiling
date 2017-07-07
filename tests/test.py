@@ -2,7 +2,7 @@ import os
 import sys
 
 currDir = os.getcwd()
-dir = currDir.split('/test')[0]
+dir = currDir.split('/test')[0] + '/bin'
 exportText = 'export PYTHONPATH='+ dir +':${PYTHONPATH}'
 
 File = open('setup.sh', 'w')
