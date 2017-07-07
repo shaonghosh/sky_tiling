@@ -83,7 +83,7 @@ if __name__ == "__main__":
               'Operating System :: Unix',
               'Operating System :: MacOS'],
       )
-dir = os.getcwd()
+dir = os.getcwd() + '/bin'
 exportText = 'export PYTHONPATH='+ dir +':${PYTHONPATH}'
 print '''\n***** sky_tiling is configured *****.
 Run the following in your terminal or put in your .bashrc'''
