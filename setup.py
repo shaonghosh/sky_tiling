@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 #
 import os
+import glob
 
 DESCRIPTION = "Tools for generating ranked tiles of a square FOV telescopes"
 LONG_DESCRIPTION = """\
@@ -47,6 +48,7 @@ def check_dependencies():
 if __name__ == "__main__":
 
     install_requires = check_dependencies()
+    scripts = glob.glob('bin/*') + glob.glob('utilities/*') 
 
     if _has_setuptools:
         packages = find_packages()
@@ -58,13 +60,13 @@ if __name__ == "__main__":
             'sky_tiling.tile_pixel_maps', 
             'sky_tiling.tile_center_files',
             'sky_tiling.utilities']
-
     setup(name=DISTNAME,
           author=AUTHOR,
           author_email=MAINTAINER_EMAIL,
           maintainer=MAINTAINER,
           maintainer_email=MAINTAINER_EMAIL,
           description=DESCRIPTION,
+	      scripts=scripts,
           long_description=LONG_DESCRIPTION,
           license=LICENSE,
           url=URL,
