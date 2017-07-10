@@ -33,7 +33,9 @@ Running this should generate a config file in the work directory. The std output
 
 ## Basic function calls ##
 skymap_file = 'bayestar.fits.gz' ### GW sky Map
+
 tileObj = rankedTilesGenerator.RankedTileGenerator(skymap_file, 'config.ini')
+
 [ranked_tile_indices, ranked_tile_probs] = tileObj.getRankedTiles(resolution=256)
 
 This generates the ranked tiles and their corresponding probability values.
