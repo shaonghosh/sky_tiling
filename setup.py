@@ -1,99 +1,113 @@
-#! /usr/bin/env python
-#
 import os
-import glob
+import importlib
 
-DESCRIPTION = "Tools for generating ranked tiles of a square FOV telescopes"
-LONG_DESCRIPTION = """\
-Given a GW sky-localziation maps obtained from BAYESTAR or LALInference, this 
-tool finds the ranked-tiles for observation using FOV of the telescope.
-More information: A&A, 592 (2016) A82, arXiv:1511.02673
-"""
+## append this list with new packages ##
+dependencies = ['argparse', 'astropy', 'healpy', 'scipy']
 
-DISTNAME = 'sky_tiling'
-AUTHOR = 'Shaon Ghosh'
-MAINTAINER = 'Shaon Ghosh' 
-MAINTAINER_EMAIL = 'ghosh4@uwm.edu'
-URL = 'https://github.com/shaonghosh/sky_tiling/'
-LICENSE = 'GPLv3'
-DOWNLOAD_URL = 'https://github.com/shaonghosh/sky_tiling/'
-VERSION = '0.1.0'
+count = 0
+for module in dependencies:
+	try:
+		importlib.import_module(module)
+	except ImportError:
+		count += 1
+		print '\n--- Could not find ' + module + ' ---\n'
+		continue
+	print '\n*** Found package ' + module + ' ***\n'
 
-try:
-    from setuptools import setup, find_packages
-    _has_setuptools = True
-except ImportError:
-    from distutils.core import setup
+if count > 0:
+	print '\nNumber of packages not found = ' + str(count)
+	raise Exception('All dependencies are NOT satisfied\n')
 
-def check_dependencies():
-   install_requires = []
+print '\n All dependencies are satisfied!\n'
 
-   # Make sure dependencies exist.
-   try:
-       import astropy
-   except ImportError:
-       install_requires.append('astropy')
-   try:
-       import healpy
-   except ImportError:
-       install_requires.append('healpy')
-   try:
-       import pickle
-   except ImportError:
-       install_requires.append('pickle')
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-P", "--path", action="store",
+ 				   help="Full path where the pixel-tile maps will be saved")
+parser.add_argument("-W", "--work", action="store", help="Full path of the work directory")
 
-   return install_requires
+## Only ATLAS, BlackGEM, Pan Starrs 1, ZTF precomputed files are present ##
+parser.add_argument("-T", "--telescope", action="store", help="Name of telecope")
+
+## from astropy.coordinates import EarthLocation ##
+## astropy.coordinates.EarthLocation.get_site_names() gives the name of valid sites ##
+parser.add_argument("-S", "--site", action="store", help="Name of location of telescope")
+parser.add_argument("-m", "--timemag", action="store",
+				   help="Name of integration-time vs limiting-magnitude file")
+parser.add_argument("-e", "--extension", action="store", help="png, pdf etc")
+				   
+
+args = parser.parse_args()
+
+currentDir = os.getcwd()
+
+### Preparing texts for config file ###
+preComputed_64 = 'preComputed_64 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_64.dat'
+preComputed_128 = 'preComputed_128 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_128.dat'
+preComputed_256 = 'preComputed_256 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_256.dat'
+preComputed_512 = 'preComputed_512 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_512.dat'
+preComputed_1024 = 'preComputed_1024 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_1024.dat'
+preComputed_2048 = 'preComputed_2048 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_2048.dat'
+
+tileFile = 'tileFile = ' + currentDir + '/tile_center_files/' + args.telescope + '_tiles_indexed.dat'
 
 
-if __name__ == "__main__":
+filenametag = 'filenametag = ' + args.telescope
+extension = 'extension = ' + args.extension
 
-    install_requires = check_dependencies()
-    scripts = glob.glob('bin/*') + glob.glob('utilities/*') 
+site = 'site = ' + args.site
+time_magnitude = 'time_magnitude = ' + args.timemag
 
-    if _has_setuptools:
-        packages = find_packages()
-        print packages
-    else:
-        # This should be updated if new submodules are added
-        packages = [
-            'sky_tiling', 
-            'sky_tiling.tile_pixel_maps', 
-            'sky_tiling.tile_center_files',
-            'sky_tiling.utilities']
-    setup(name=DISTNAME,
-          author=AUTHOR,
-          author_email=MAINTAINER_EMAIL,
-          maintainer=MAINTAINER,
-          maintainer_email=MAINTAINER_EMAIL,
-          description=DESCRIPTION,
-	      scripts=scripts,
-          long_description=LONG_DESCRIPTION,
-          license=LICENSE,
-          url=URL,
-          version=VERSION,
-          download_url=DOWNLOAD_URL,
-          install_requires=install_requires,
-          packages=packages,
-          classifiers=[
-              'Intended Audience :: Science/Research',
-              'Programming Language :: Python :: 2.7',
-              'License :: OSI Approved :: GPLv3',
-              'Topic :: Scientific/Engineering :: Astronomy',
-              'Operating System :: POSIX',
-              'Operating System :: Unix',
-              'Operating System :: MacOS'],
-      )
-dir = os.getcwd()
-bindir = dir + '/bin'
-exportText1 = 'export PYTHONPATH='+ dir +':${PYTHONPATH}'
-exportText2 = 'export PYTHONPATH='+ bindir +':${PYTHONPATH}'
 
+os.system('mkdir -p ' + args.work)
+configFile = open(args.work + '/config.ini', 'w')
+
+configFile.writelines('[pixelTileMap]\n')
+configFile.writelines(preComputed_64 + '\n')
+configFile.writelines(preComputed_128 + '\n')
+configFile.writelines(preComputed_256 + '\n')
+configFile.writelines(preComputed_512 + '\n')
+configFile.writelines(preComputed_1024 + '\n')
+configFile.writelines(preComputed_2048 + '\n\n')
+
+configFile.writelines('[tileFiles]\n')
+configFile.writelines(tileFile + '\n\n')
+
+configFile.writelines('[plot]\n')
+configFile.writelines(filenametag + '\n')
+configFile.writelines(extension + '\n\n')
+
+configFile.writelines('[observation]\n')
+configFile.writelines(site + '\n')
+configFile.writelines(time_magnitude + '\n')
+configFile.writelines('trigger_time = ' + '\n\n')
+
+configFile.close()
+
+
+
+
+
+if args.path is not None:
+	os.system('cp tile_pixel_maps/*.dat ' + args.path + '/.')
+
+
+	
+binDir = currentDir + '/bin'
+exportText1 = 'export PYTHONPATH='+ currentDir +':${PYTHONPATH}'
+exportText2 = 'export PYTHONPATH='+ binDir +':${PYTHONPATH}'
 print '''\n***** sky_tiling is configured *****.
-Run the following in your terminal or put in your .bashrc'''
+Run the following in your terminal or put it in your .bashrc'''
 print exportText1
 print exportText2
+print '\n'
 
 
 
+
+
+
+
+	
 
 
