@@ -52,11 +52,17 @@ A vital ingredient for the ranked tile generation is the tile-pixel map for a te
 There is a script in the bin directory of the repository, called preComputeTiles.py. This script requires any arbitrary GW sky-map (surrogate map) and a predetermined tile file for the telescope (defined by the grid in the sky commensurate to the FOV of the telescope). This tile file will have the following format...
 
 ID      ra_center       dec_center
+-----------------------------------
 0       25.000000       -89.900000
+
 1       51.428571       -88.363636
+
 2       102.857143      -88.363636
+
 3       154.285714      -88.363636
+
 4       205.714286      -88.363636
+-----------------------------------
 
 (Examples of such files can be found in the tile_center_files directory of the repository. In the future we will also provide codes to generate these files.)
 
