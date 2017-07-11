@@ -24,8 +24,11 @@ The main ranked-tiling code is supposed to be used as a module. Thus the install
                   However, the argument still needs to be supplied (could be just a fake extension name).
 
 Example commands:
+
 python setup.py --work ~/RunDir/sky_tile_work --telescope BlackGEM --site None --timemag None --extension png
+
 python setup.py --work ~/RunDir/sky_tile_work --telescope BlackGEM --site lasilla --timemag None --extension pdf
+
 ...
 *NOTE: Currently the setup script has to be run from the repository itself.*
 
