@@ -33,6 +33,7 @@ def preComputeMap(tileFile, telescope, target_nside=256):
 
 	closestTileIndex = []
 
+	print '\nCreating pixel tile map for skymaps of nside = ' + str(target_nside)
 	with ProgressBar(len(pixelIndex)) as bar:
 		for ii in pixelIndex:
 			s = np.arccos( np.sin(np.pi*dec[ii]/180.)\

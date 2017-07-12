@@ -31,6 +31,8 @@ parser.add_argument("-W", "--work", action="store", help="Full path of the work 
 ## Only ATLAS, BlackGEM, Pan Starrs 1, ZTF precomputed files are present ##
 parser.add_argument("-T", "--telescope", action="store", help="Name of telecope")
 parser.add_argument("-F", "--fov", action="store", type=float, default=None, help="value of FOV, if telescope name is not among standard")
+parser.add_argument("-N", "--nside", action="store", type=int, default=256, help="Target nside value")
+
 parser.add_argument("-t", "--tilefile", action="store", help="Full path + name of tilefile if supplied by user")
 
 
@@ -65,7 +67,8 @@ if args.telescope not in Telescopes:
 			
 	
 	### NOTE: Make sure to check for the existence of the tile-pixel map file before calling this function
-	precomputeFile_new = preComputeMap.preComputeMap(tilefile, args.telescope, target_nside=256) # Create the tile-pixel maps 
+	target_nside = args.nside
+	precomputeFile_new = preComputeMap.preComputeMap(tilefile, args.telescope, target_nside=target_nside) # Create the tile-pixel maps 
 
 
 
@@ -127,6 +130,7 @@ print '''\n***** sky_tiling is configured *****.
 Run the following in your terminal or put it in your .bashrc'''
 print exportText1
 print exportText2
+print exportText3
 print '\n'
 
 
