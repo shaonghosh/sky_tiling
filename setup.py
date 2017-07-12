@@ -1,5 +1,7 @@
 import os
+import sys
 import importlib
+from utilities import createTileCenters, preComputeMap
 
 ## append this list with new packages ##
 dependencies = ['argparse', 'astropy', 'healpy', 'scipy']
@@ -28,6 +30,9 @@ parser.add_argument("-W", "--work", action="store", help="Full path of the work 
 
 ## Only ATLAS, BlackGEM, Pan Starrs 1, ZTF precomputed files are present ##
 parser.add_argument("-T", "--telescope", action="store", help="Name of telecope")
+parser.add_argument("-F", "--fov", action="store", type=float, default=None, help="value of FOV, if telescope name is not among standard")
+parser.add_argument("-t", "--tilefile", action="store", help="Full path + name of tilefile if supplied by user")
+
 
 ## from astropy.coordinates import EarthLocation ##
 ## astropy.coordinates.EarthLocation.get_site_names() gives the name of valid sites ##
@@ -39,63 +44,85 @@ parser.add_argument("-e", "--extension", action="store", help="png, pdf etc")
 
 args = parser.parse_args()
 
+##########################################################################################
+
 currentDir = os.getcwd()
 
+Telescopes = ['Atlas', 'BlackGEM', 'PS1', 'ZTF'] ## List of 'standard' telescopes 
+
+if args.telescope not in Telescopes:
+	if args.tilefile: # check if the tile-center file is already provided by the user
+		tilefile = args.tilefile
+	else: # If not, then create the file, FOV is required
+		if args.fov:
+			tilefile = createTileCenters.createTileCenters(args.telescope, args.fov)
+		else:
+			print '\nFor non-standard telescopes: ' + str(Telescopes)
+			print 'user must provide a valid FOV for your telescope or provide a tile-center file'
+			print 'use options --fov or --tilefile when running setup.py'
+			print 'Exiting...\n'
+			sys.exit(1)
+			
+	
+	### NOTE: Make sure to check for the existence of the tile-pixel map file before calling this function
+	precomputeFile_new = preComputeMap.preComputeMap(tilefile, args.telescope, target_nside=256) # Create the tile-pixel maps 
+
+
+
 ### Preparing texts for config file ###
-preComputed_64 = 'preComputed_64 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_64.dat'
-preComputed_128 = 'preComputed_128 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_128.dat'
-preComputed_256 = 'preComputed_256 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_256.dat'
-preComputed_512 = 'preComputed_512 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_512.dat'
-preComputed_1024 = 'preComputed_1024 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_1024.dat'
-preComputed_2048 = 'preComputed_2048 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_2048.dat'
+preComputed_64_line = 'preComputed_64 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_64.dat'
+preComputed_128_line = 'preComputed_128 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_128.dat'
+preComputed_256_line = 'preComputed_256 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_256.dat'
+preComputed_512_line = 'preComputed_512 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_512.dat'
+preComputed_1024_line = 'preComputed_1024 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_1024.dat'
+preComputed_2048_line = 'preComputed_2048 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_2048.dat'
 
-tileFile = 'tileFile = ' + currentDir + '/tile_center_files/' + args.telescope + '_tiles_indexed.dat'
+tileFile_line = 'tileFile = ' + currentDir + '/tile_center_files/' + args.telescope + '_tiles_indexed.dat'
 
 
-filenametag = 'filenametag = ' + args.telescope
-extension = 'extension = ' + args.extension
+filenametag_line = 'filenametag = ' + args.telescope
+extension_line = 'extension = ' + args.extension
 
-site = 'site = ' + args.site
-time_magnitude = 'time_magnitude = ' + args.timemag
+site_line = 'site = ' + args.site
+time_magnitude_line = 'time_magnitude = ' + args.timemag
 
 
 os.system('mkdir -p ' + args.work)
 configFile = open(args.work + '/config.ini', 'w')
 
 configFile.writelines('[pixelTileMap]\n')
-configFile.writelines(preComputed_64 + '\n')
-configFile.writelines(preComputed_128 + '\n')
-configFile.writelines(preComputed_256 + '\n')
-configFile.writelines(preComputed_512 + '\n')
-configFile.writelines(preComputed_1024 + '\n')
-configFile.writelines(preComputed_2048 + '\n\n')
+configFile.writelines(preComputed_64_line + '\n')
+configFile.writelines(preComputed_128_line + '\n')
+configFile.writelines(preComputed_256_line + '\n')
+configFile.writelines(preComputed_512_line + '\n')
+configFile.writelines(preComputed_1024_line + '\n')
+configFile.writelines(preComputed_2048_line + '\n\n')
 
 configFile.writelines('[tileFiles]\n')
-configFile.writelines(tileFile + '\n\n')
+configFile.writelines(tileFile_line + '\n\n')
 
 configFile.writelines('[plot]\n')
-configFile.writelines(filenametag + '\n')
-configFile.writelines(extension + '\n\n')
+configFile.writelines(filenametag_line + '\n')
+configFile.writelines(extension_line + '\n\n')
 
 configFile.writelines('[observation]\n')
-configFile.writelines(site + '\n')
-configFile.writelines(time_magnitude + '\n')
+configFile.writelines(site_line + '\n')
+configFile.writelines(time_magnitude_line + '\n')
 configFile.writelines('trigger_time = ' + '\n\n')
 
 configFile.close()
 
 
+# if args.path is not None:
+# 	os.system('cp tile_pixel_maps/*.dat ' + args.path + '/.')
 
 
-
-if args.path is not None:
-	os.system('cp tile_pixel_maps/*.dat ' + args.path + '/.')
-
-
-	
 binDir = currentDir + '/bin'
+utils = currentDir + '/utilities'
+
 exportText1 = 'export PYTHONPATH='+ currentDir +':${PYTHONPATH}'
 exportText2 = 'export PYTHONPATH='+ binDir +':${PYTHONPATH}'
+exportText3 = 'export PYTHONPATH='+ utils +':${PYTHONPATH}'
 print '''\n***** sky_tiling is configured *****.
 Run the following in your terminal or put it in your .bashrc'''
 print exportText1
