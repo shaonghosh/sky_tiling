@@ -15,15 +15,15 @@
 The main ranked-tiling code is supposed to be used as a module. Thus the installation involves simply setting up the environment. This is done by the customized setup.py script. Running this code requires the following arguments:
 
 
-  *  --work      : The name of the working directory. The configuration script will be created here.
+  ()  --work      : The name of the working directory. The configuration script will be created here.
   
-  * --telescope : The name of the telescope. Currently only works for ATLAS, BlackGEM, Pan Starrs and ZTF. In future 
+  () --telescope : The name of the telescope. Currently only works for ATLAS, BlackGEM, Pan Starrs and ZTF. In future 
                   developments, this will work for any generic telesscopes with square FOV.
                   
-  * --site      : The site of the observatory. This is required for the "scheduler". Note required for finding ranked-tiles.
+  () --site      : The site of the observatory. This is required for the "scheduler". Note required for finding ranked-tiles.
                   However, the argument still needs to be supplied (could be just a fake site name).
                   
-  * --extension : The file extension (png, pdf etc) of the plot of the tiles. Only required for the plotting method.
+  () --extension : The file extension (png, pdf etc) of the plot of the tiles. Only required for the plotting method.
                   However, the argument still needs to be supplied (could be just a fake extension name).
 
 Example commands:
