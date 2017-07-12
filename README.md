@@ -15,7 +15,7 @@
 The main ranked-tiling code is supposed to be used as a module. Thus the installation involves simply setting up the environment. This is done by the customized setup.py script. Running this code requires the following arguments:
 
 
-  *  --work      : The name of the working directory. The configuration script will be dumped here
+  *  --work      : The name of the working directory. The configuration script will be created here.
   
   * --telescope : The name of the telescope. Currently only works for ATLAS, BlackGEM, Pan Starrs and ZTF. In future 
                   developments, this will work for any generic telesscopes with square FOV.
