@@ -322,9 +322,9 @@ class RankedTileGenerator:
 # 		print len(ranked_tile_indices)
 # 		print len(RA_tile[include_tiles])
 # 		print len(ranked_tile_probs)
-				
-		output = np.vstack((ranked_tile_indices, RA_tile[include_tiles], Dec_tile[include_tiles], ranked_tile_probs)).T
-		t = Table(rows=output, names=('index', 'RA', 'Dec', 'Probability'), dtype=('i4', 'f8', 'f8', 'f8'))
+		ranks = np.arange(1, len(ranked_tile_indices)+1)
+		output = np.vstack((ranks, ranked_tile_indices, RA_tile[include_tiles], Dec_tile[include_tiles], ranked_tile_probs)).T
+		t = Table(rows=output, names=('Rank', 'index', 'RA', 'Dec', 'Probability'), dtype=('i4', 'i4', 'f8', 'f8', 'f8'))
 		return t 
 
 
