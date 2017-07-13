@@ -44,9 +44,11 @@ from scipy import interpolate
 
 from astropy.time import Time
 from astropy import units as u
+from astropy.table import Table
 from astropy.coordinates import get_sun
 from astropy.coordinates import get_moon
 from astropy.coordinates import get_body
+
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 
 
@@ -281,6 +283,7 @@ class RankedTileGenerator:
 		include_tiles = np.cumsum(allTiles_probs_sorted) < CI
 		include_tiles[np.sum(include_tiles)] = True
 		ranked_tile_indices = ranked_tile_indices[include_tiles]
+		ranked_tile_probs = allTiles_probs_sorted[include_tiles]
 		
 		if save: lw = 4
 		else: lw = 1
@@ -315,6 +318,15 @@ class RankedTileGenerator:
 	
 		else:
 			pl.show()
+		
+# 		print len(ranked_tile_indices)
+# 		print len(RA_tile[include_tiles])
+# 		print len(ranked_tile_probs)
+				
+		output = np.vstack((ranked_tile_indices, RA_tile[include_tiles], Dec_tile[include_tiles], ranked_tile_probs)).T
+		t = Table(rows=output, names=('index', 'RA', 'Dec', 'Probability'), dtype=('i4', 'f8', 'f8', 'f8'))
+		return t 
+
 
 	def rankGalaxies2D(self, catalog, resolution=None):
 		'''
