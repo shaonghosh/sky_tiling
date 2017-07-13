@@ -281,6 +281,9 @@ class RankedTileGenerator:
 		include_tiles = np.cumsum(allTiles_probs_sorted) < CI
 		include_tiles[np.sum(include_tiles)] = True
 		ranked_tile_indices = ranked_tile_indices[include_tiles]
+		
+		if save: lw = 4
+		else: lw = 1
 
 		if FOV is None:
 			tileEdges = False
@@ -297,10 +300,6 @@ class RankedTileGenerator:
 				RAP2, DecP2 = m(ra_up_right, dec_up)
 				RAP3, DecP3 = m(ra_down_left, dec_down)
 				RAP4, DecP4 = m(ra_down_right, dec_down)
-				if save:
-					lw = 4
-				else:
-					lw = 1
 				m.plot([RAP1, RAP2], [DecP1, DecP2],'k-', linewidth=lw) 
 				m.plot([RAP2, RAP4], [DecP2, DecP4],'k-', linewidth=lw) 
 				m.plot([RAP4, RAP3], [DecP4, DecP3],'k-', linewidth=lw) 
