@@ -53,9 +53,13 @@ where, we are plotting for the BlackGEM's FOV. If tileEdges is set to False then
 
 ## Tile-Pixel maps ##
 
-A vital ingredient for the ranked tile generation is the tile-pixel map for a telescope. This allows rapid computation of the ranked tiles. Currently the repository contains tile-pixel maps for the four aforementioned telescopes. However, only resolution of nside=256 is available for all the telescopes. Higher resolution maps are larger, and we will provide them via other means. However, the users are welcome to generate their own tile pixel maps. We describe this below:
+A vital ingredient for the ranked tile generation is the tile-pixel map for a telescope. This allows rapid computation of the ranked tiles. Currently the repository contains tile-pixel maps for the four aforementioned telescopes. Only resolution of nside=256 is available for all the telescopes. Higher resolution maps are larger, and we will provide them via other means (currently available in the NEMO cluster of UWM). However, the users are welcome to generate their own tile pixel maps. We describe this below:
 
-There is a script in the bin directory of the repository, called preComputeTiles.py. This script requires any arbitrary GW sky-map (surrogate map) and a predetermined tile file for the telescope (defined by the grid in the sky commensurate to the FOV of the telescope). This tile file will have the following format...
+If the user defines a telescope that is among the standard telescope name for this repository, namely Atlas, BlackGEM, PS1 and ZTF, then the ranked-tiling code will use the existing pre-computed tile-pixel maps in the utilities directory of the repository. However if a non-standard telescope name is used, then the user has two option:
+
+Option 1.
+
+User can specify a tile center file, which has the center of the predefined sky-grid for the tiles. The format of the tiles is as shown below (no spaces between lines). Examples of such files can be obtained from the tile_center_files directory of the repository.
 
 ID        ra_center         dec_center
 
@@ -69,14 +73,23 @@ ID        ra_center         dec_center
 
 4         205.71           -88.36
 
+The setup command that needs to be run in such a case is:
 
-(Examples of such files can be found in the tile_center_files directory of the repository. In the future we will also provide codes to generate these files.)
+python setup.py --work ~/RunDir/sky_tile_work --telescope <some telescope> --site <some site or None> --timemag <some time magnitude file or None> --tilefile <name and full path of tile file> --extension png
 
-Running the following command will generate the tile-pixel map:
-
-python preComputeTiles.py --tileFile <name of tile file> --resolution <256/512/1024/etc> --map <surrogate sky-map> --outTag <output file name tag>
+This will first create the tile-pixel map file and put it in the tile_pixel_maps directory of the repository. Then create the config file in the working directory with the paths to this file in the right section.
 
 
+
+Option 2.
+
+If the user do not have such a file, then this file first needs to be generated first. You would need to know the field-of-view (FOV) of the telescope to generate. Note that currently the software can only handle square FOV.
+
+To do this run the setup script with the following options:
+
+python setup.py --work ~/RunDir/sky_tile_work --telescope <some telescope> --site <some site or None> --timemag <some time magnitude file or None> --fov <telescope FOV> --extension png
+
+This will prompt the setup script to first generate an ad-hoc tile coordinate file that it will put in the tile_center_files directory. It will then use this file to generate the tile-pixel map files that it will put in the tile_pixel_maps directory of the repository. Finally it will create the config file and put in the work directory with the right paths.
 
 
 
