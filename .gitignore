@@ -8,6 +8,14 @@
 *.so
 *.pyc
 
+# Only keep standard telescope pickles #
+########################################
+tile_pixel_maps/*
+!tile_pixel_maps/preComputed_ATLAS_pixel_indices_256.dat
+!tile_pixel_maps/preComputed_BlackGEM_pixel_indices_256.dat
+!tile_pixel_maps/preComputed_PS1_pixel_indices_256.dat
+!tile_pixel_maps/preComputed_ZTF_pixel_indices_256.dat
+
 # OS generated files #
 ######################
 .DS_Store
