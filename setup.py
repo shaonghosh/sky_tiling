@@ -52,7 +52,7 @@ currentDir = os.getcwd()
 
 Telescopes = ['Atlas', 'BlackGEM', 'PS1', 'ZTF'] ## List of 'standard' telescopes 
 
-if args.telescope not in Telescopes:
+if (args.telescope not in Telescopes) or args.nside:
 	if args.tilefile: # check if the tile-center file is already provided by the user
 		tilefile = args.tilefile
 	else: # If not, then create the file, FOV is required
@@ -68,6 +68,12 @@ if args.telescope not in Telescopes:
 	
 	### NOTE: Make sure to check for the existence of the tile-pixel map file before calling this function
 	target_nside = args.nside
+	if target_nside not in [64, 128, 256, 512, 1024, 2048]:
+		print '\nValue of nside must be between [64, 2048] and a power of 2 '
+		print 'Please provide a valid nside...'
+		print 'Exiting...\n'
+		sys.exit(1)
+		
 	precomputeFile_new = preComputeMap.preComputeMap(tilefile, args.telescope, target_nside=target_nside) # Create the tile-pixel maps 
 
 
@@ -80,7 +86,12 @@ preComputed_512_line = 'preComputed_512 = ' + currentDir + '/tile_pixel_maps/pre
 preComputed_1024_line = 'preComputed_1024 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_1024.dat'
 preComputed_2048_line = 'preComputed_2048 = ' + currentDir + '/tile_pixel_maps/preComputed_' + args.telescope + '_pixel_indices_2048.dat'
 
-tileFile_line = 'tileFile = ' + currentDir + '/tile_center_files/' + args.telescope + '_tiles_indexed.dat'
+
+if args.tilefile:
+	tileFile_line = 'tileFile = ' + args.tilefile
+
+else:
+	tileFile_line = 'tileFile = ' + currentDir + '/tile_center_files/' + args.telescope + '_tiles_indexed.dat'
 
 
 filenametag_line = 'filenametag = ' + args.telescope
