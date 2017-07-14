@@ -52,14 +52,19 @@ currentDir = os.getcwd()
 
 Telescopes = ['Atlas', 'BlackGEM', 'PS1', 'ZTF'] ## List of 'standard' telescopes 
 
-if (args.telescope not in Telescopes) or args.nside:
+
+nonStandardResolution = args.nside != 256
+
+nonStandardTelescope = args.telescope not in Telescopes
+
+if nonStandardTelescope + nonStandardResolution:
 	if args.tilefile: # check if the tile-center file is already provided by the user
 		tilefile = args.tilefile
 	else: # If not, then create the file, FOV is required
 		if args.fov:
 			tilefile = createTileCenters.createTileCenters(args.telescope, args.fov)
 		else:
-			print '\nFor non-standard telescopes: ' + str(Telescopes)
+			print '\nFor non-standard telescopes: ' + str(Telescopes) + ' or nside =/= 256'
 			print 'user must provide a valid FOV for your telescope or provide a tile-center file'
 			print 'use options --fov or --tilefile when running setup.py'
 			print 'Exiting...\n'
@@ -143,6 +148,14 @@ print exportText1
 print exportText2
 print exportText3
 print '\n'
+
+sourceFile = open(args.work + '/sky_tilingrc', 'w')
+sourceFile.writelines(exportText1 + '\n')
+sourceFile.writelines(exportText2 + '\n')
+sourceFile.writelines(exportText3 + '\n')
+os.system('chmod 777 ' + args.work + '/sky_tilingrc')
+
+print 'A copy of source script is put in the work directory: ' + args.work + '/sky_tilingrc'
 
 
 
