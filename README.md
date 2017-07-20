@@ -46,13 +46,13 @@ Running this should generate a config file in the work directory. The std output
 
 ## The Ranked-Tiling Strategy ##
 
-**Introduction**
+**Introduction:**
 Follow-up of gravitational wave sky-localization regions using large FOV telescopes requires adopting strategies that cover a desired localization interval with minimum number of telescope pointings. Each pointing leaves a footprint of the telescope field-of-view on the sky. We define this footprint as a tile. In arXiv:1511.02673 we presented a strategy which we named ranked-tiling strategy to optimally cover the GW loclizations. This strategy is most useful when the telescope's FOV is very large and if the telscope opts for a predefined grid to get reference images from earlier epochs. In this strategy we first compute the probability localized within each tile in the predefined grid and then rank the tiles based on the probability values. Take the top 'N' number of tiles from this ranked list that comprises 90% of the GW localization probability, that is the requred set of ranked-tiles. 
 
 For a given telescope with predetermined sky-grid the centers of the allowed footprints are fixed in the sky. This we call the 'fixed-tiles'. For a given resolution of sky-map the pixels of the BAYESTAR sky-map are also known in advnce. Thus set of pixels that are inside a given tile are predetermined. Thus we can construct a tile-pixel map for a given telecope sky-grid and given resolution of sky-map. This can be exploited to construct the ranked-tiles very rapidly, since the probability contained in a given tile is simply computed by querying the probability value in the pixels that are mapped into the tile.
 
 
-**Tile-Pixel maps**
+**Tile-Pixel maps:**
 A vital ingredient for the ranked tile generation is the tile-pixel map for a telescope. This allows rapid computation of the ranked tiles. Currently the repository contains tile-pixel maps for the four aforementioned telescopes. Only resolution of nside=256 is available for all the telescopes. Higher resolution maps are larger, and we will provide them via other means (currently available in the NEMO cluster of UWM). However, the users are welcome to generate their own tile pixel maps. We describe this below:
 
 If the user defines a telescope that is among the standard telescope name for this repository, namely Atlas, BlackGEM, PS1 and ZTF, then the ranked-tiling code will use the existing pre-computed tile-pixel maps in the utilities directory of the repository. However if a non-standard telescope name is used, then the user has two option:
