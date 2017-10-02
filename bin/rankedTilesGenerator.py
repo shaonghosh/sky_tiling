@@ -36,6 +36,7 @@ import pickle
 import datetime
 import numpy as np
 import pylab as pl
+import pandas as pd
 from math import ceil
 
 import healpy as hp
@@ -481,15 +482,19 @@ class Scheduler(RankedTileGenerator):
 	the second should be the tile center's ra value and the third the dec value of the 
 	same. The utcoffset is the time difference between UTC and the site in hours. 
 	'''
-	def __init__(self, skymapFile, site='Palomar', 
-				 tileCoord='ZTF_tiles_set1_nowrap_indexed.dat', utcoffset = -7.0):
+	def __init__(self, skymapFile, configfile, site='Palomar', utcoffset = -7.0):
+
+		configParser = ConfigParser.ConfigParser()
+		configParser.read(configfile)
+
+		self.tileCoord = configParser.get('tileFiles', 'tileFile')
 
 		self.Observatory = EarthLocation.of_site(site)
-		self.tileData = np.recfromtxt(tileCoord, names=True)
+		self.tileData = np.recfromtxt(self.tileCoord, names=True)
 		self.skymapfile = skymapFile
 		
-		tileObj = RankedTileGenerator(skymapFile)
-		[self.tileIndices, self.tileProbs] = tileObj.getRankedTiles()
+		tileObj = RankedTileGenerator(skymapFile, configfile)
+		[self.tileIndices, self.tileProbs] = tileObj.getRankedTiles(resolution=256)
 
 		self.tiles = SkyCoord(ra = self.tileData['ra_center'][self.tileIndices]*u.degree, 
 					    dec = self.tileData['dec_center'][self.tileIndices]*u.degree, 
@@ -515,7 +520,7 @@ class Scheduler(RankedTileGenerator):
 		whichTilesUp = altAz_tile.alt.value > 20.0  ### Checks which tiles are up		
 		
 # 		return [altAz_tile, self.tileProbs, altAz_sun]
-		return [self.tileIndices[whichTilesUp], self.tileProbs[whichTilesUp], altAz_sun]
+		return [self.tileIndices[whichTilesUp], self.tileProbs[whichTilesUp], altAz_tile[whichTilesUp], altAz_sun]
 		
 
 	def advanceToSunset(self, eventTime, intTime):
@@ -537,7 +542,7 @@ class Scheduler(RankedTileGenerator):
 		return timeBeforeSunset
 
 
-	############### NOT TESTED ############
+	############### NOT TESTED AND NOT USED CURRENTLY ############
 	def whenThisTileSets(self, index, currentTime, duration, gps=False):
 		'''
 		This method approximately computes the amount of time left in seconds for a tile
@@ -581,7 +586,8 @@ class Scheduler(RankedTileGenerator):
 		
 		'''
 		
-		includeTiles = np.cumsum(self.tileProbs) < 0.99
+		eventTime = eventTime + (self.utcoffset).to(u.s).value
+		includeTiles = np.cumsum(self.tileProbs) < 0.90
 		includeTiles[np.sum(includeTiles)] = True
 		
 		thresholdTileProb = self.tileProbs[includeTiles][-1]
@@ -591,6 +597,7 @@ class Scheduler(RankedTileGenerator):
 		observedTime = 0 ## Initiating the observed times
 		elapsedTime = 0  ## Initiating the elapsed times. Time since observation begun.
 		scheduled = np.array([]) ## tile indices scheduled for observation
+		obs_tile_altAz = []
 		ObsTimes = []
 		pVal_observed = []
 		ii = 0
@@ -605,30 +612,34 @@ class Scheduler(RankedTileGenerator):
 		
 		
 		
-		[_, _, altAz_sun] = self.tileVisibility(eventTime, gps=True)
+		[_, _, _, altAz_sun] = self.tileVisibility(eventTime, gps=True)
 		
 		if altAz_sun.alt.value >= -18.0:
 			if verbose: 
-				localTime = Time(eventTime, format='gps') + self.utcoffset
+# 				localTime = Time(eventTime, format='gps') + self.utcoffset
+				localTime = Time(eventTime, format='gps')
 				print str(localTime.utc.datetime) + ': Sun above the horizon'
 			eventTime = self.advanceToSunset(eventTime, integrationTime)
 			if verbose:
-				localTime = Time(eventTime, format='gps') + self.utcoffset
+# 				localTime = Time(eventTime, format='gps') + self.utcoffset
+				localTime = Time(eventTime, format='gps')
 				print 'Advancing time to ' + str(localTime.utc.datetime)
 				print '\n'
 
 		
 		while elapsedTime <= duration: 
-			[tileIndices, tileProbs, altAz_sun] = self.tileVisibility(eventTime, gps=True)
-			localTime = Time(eventTime, format='gps') + self.utcoffset
+			[tileIndices, tileProbs, altAz_tile, altAz_sun] = self.tileVisibility(eventTime, gps=True)
+# 			localTime = Time(eventTime, format='gps') + self.utcoffset
+			localTime = Time(eventTime, format='gps')
 			
 			if altAz_sun.alt.value < -18.0: 
 				if verbose: 
 					print str(localTime.utc.datetime) + ': Observation mode'
 				for jj in np.arange(len(tileIndices)):
 					if tileIndices[jj] not in scheduled:
-						if tileProbs[jj] > thresholdTileProb:
+						if tileProbs[jj] >= thresholdTileProb:
 							scheduled = np.append(scheduled, tileIndices[jj])
+							obs_tile_altAz.append(altAz_tile[jj])
 							ObsTimes.append(localTime)
 							pVal_observed.append(tileProbs[jj])
 							Sun = get_sun(Time(eventTime, format='gps'))
@@ -651,11 +662,13 @@ class Scheduler(RankedTileGenerator):
 				
 			else:
 				if verbose: 
-					localTime = Time(eventTime, format='gps') + self.utcoffset
+# 					localTime = Time(eventTime, format='gps') + self.utcoffset
+					localTime = Time(eventTime, format='gps')
 					print str(localTime.utc.datetime) + ': Sun above the horizon'
 				eventTime = self.advanceToSunset(eventTime, integrationTime)
 				if verbose:
-					localTime = Time(eventTime, format='gps') + self.utcoffset
+# 					localTime = Time(eventTime, format='gps') + self.utcoffset
+					localTime = Time(eventTime, format='gps')
 					print 'Advancing time to ' + str(localTime.utc.datetime)
 					print '\n'
 			
@@ -664,8 +677,9 @@ class Scheduler(RankedTileGenerator):
 
 			eventTime += integrationTime
 			elapsedTime += integrationTime
-			print 'elapsedTime --->' + str(elapsedTime)
-			print 'observedTime --->' + str(observedTime)
+			if verbose:
+				print 'elapsedTime --->' + str(elapsedTime)
+				print 'observedTime --->' + str(observedTime)
 
 
 	
@@ -722,10 +736,16 @@ class Scheduler(RankedTileGenerator):
 
 
 
-
+		tile_obs_times = []
+		airmass = []
+		alttiles = []
 		for ii in np.arange(len(scheduled)):
+			tile_obs_times.append(ObsTimes[ii].utc.datetime)
 			print str(ObsTimes[ii].utc.datetime) + '\t' + str(int(scheduled[ii]))
-			
+			altAz_tile = self.tiles[int(scheduled[ii])].transform_to(AltAz(obstime=ObsTimes[ii], location=self.Observatory))
+			alttiles.append(obs_tile_altAz[ii].alt.value)
+			airmass.append(obs_tile_altAz[ii].secz)
+		
 		pVal_observed = np.array(pVal_observed)
 		sun_ra = np.array(sun_ra)
 		sun_dec = np.array(sun_dec)
@@ -733,10 +753,13 @@ class Scheduler(RankedTileGenerator):
 		moon_dec = np.array(moon_dec)
 		venus_ra = np.array(venus_ra)
 		venus_dec = np.array(venus_dec)
-		
-		return [scheduled.astype('int'), pVal_observed, sun_ra, 
-				sun_dec, moon_ra, moon_dec, lunar_ilumination]
-
+		alttiles = np.array(alttiles)
+				
+		df = pd.DataFrame(np.vstack((tile_obs_times, scheduled.astype('int'), pVal_observed, airmass, alttiles, lunar_ilumination)).T,\
+						columns=['Observation_Time', 'Tile_Index', 'Tile_Probs', 'Air_Mass', 'Altitudes', 'Lunar_Ilumination'])
+# 		return [scheduled.astype('int'), pVal_observed, sun_ra, 
+# 				sun_dec, moon_ra, moon_dec, lunar_ilumination]
+		return df
 
 
 
