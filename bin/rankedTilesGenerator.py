@@ -97,7 +97,7 @@ class RankedTileGenerator:
 					1024:preComputed_1024, 2048:preComputed_2048}
 				
 
-	def sourceTile(self, ra, dec, tiles):
+	def sourceTile(self, ra, dec, tileFile=None):
 		'''
 		METHOD     :: This method takes the position of the injected 
 					  event and returns the tile index
@@ -110,7 +110,10 @@ class RankedTileGenerator:
 			      2  	76.142860	-85.938460
 			      ...
 		'''
-		tileData = np.recfromtxt(tiles, names=True)
+		if tileFile is None:
+			tileFile = self.configParser.get('tileFiles', 'tileFile')
+		tileData = np.recfromtxt(tileFile, names=True)
+
 		Dec_tile = tileData['dec_center']
 		RA_tile = tileData['ra_center']
 		ID = tileData['ID']
@@ -120,6 +123,7 @@ class RankedTileGenerator:
 			* np.cos(np.pi*Dec_tile/180.) \
 			* np.cos(np.pi*(RA_tile - ra)/180.) )
 		index = np.argmin(s) ### minimum angular distance index
+		
 
 		return ID[index] - 1 ### Since the indexing begins with 1.
 
@@ -259,6 +263,10 @@ class RankedTileGenerator:
 		if save:
 			pl.figure(figsize=(80,70))
 			pl.rcParams.update({'font.size': 60})
+		else:
+			pl.rcParams.update({'font.size': 16})
+			pl.figure(figsize=(10,8))
+
 		
 		m = AllSkyMap_basic.AllSkyMap(projection='hammer')
 		RAP_map, DecP_map = m(ra_CI, dec_CI) 
@@ -528,7 +536,7 @@ class Scheduler(RankedTileGenerator):
 		This method is called when the observation scheduler determines that the sun is 
 		above horizon. It finds the nearest time prior to the next sunset within +/- 
 		integration time and then advances the scheduler code to that point. 
-		This speeds up the code by refraning from computing pointings during the daytime.
+		This speeds up the code by refraining from computing pointings during the daytime.
 		Currently only works with GPS time. In the future mjd will also be included.
 		
 		eventTime	:: The GPS time for which the advancement is to be computed.
@@ -538,7 +546,8 @@ class Scheduler(RankedTileGenerator):
 		dt = np.arange(0, 24*3600 + intTime, intTime)
 		time = Time(eventTime + dt, format='gps')
 		altAz_sun = get_sun(time).transform_to(AltAz(obstime=time, location=self.Observatory))
-		timeBeforeSunset = (eventTime + dt)[altAz_sun.alt.value < -18.0][0] - intTime
+# 		print altAz_sun.alt
+		timeBeforeSunset = (eventTime + dt)[altAz_sun.alt.value < -18.0][0]
 		return timeBeforeSunset
 
 
@@ -568,7 +577,7 @@ class Scheduler(RankedTileGenerator):
 			
 		return setTime
 
-	def observationSchedule(self, duration, eventTime, integrationTime=120,
+	def observationSchedule(self, duration, eventTime, integrationTime=120, CI=0.9,
 							observedTiles=None, plot=False, verbose=False):
 		'''
 		METHOD	:: This method takes the duration of observation, time of the GW trigger
@@ -586,8 +595,8 @@ class Scheduler(RankedTileGenerator):
 		
 		'''
 		
-		eventTime = eventTime + (self.utcoffset).to(u.s).value
-		includeTiles = np.cumsum(self.tileProbs) < 0.90
+# 		eventTime = eventTime + (self.utcoffset).to(u.s).value
+		includeTiles = np.cumsum(self.tileProbs) < CI
 		includeTiles[np.sum(includeTiles)] = True
 		
 		thresholdTileProb = self.tileProbs[includeTiles][-1]
@@ -615,10 +624,9 @@ class Scheduler(RankedTileGenerator):
 		[_, _, _, altAz_sun] = self.tileVisibility(eventTime, gps=True)
 		
 		if altAz_sun.alt.value >= -18.0:
-			if verbose: 
-# 				localTime = Time(eventTime, format='gps') + self.utcoffset
-				localTime = Time(eventTime, format='gps')
-				print str(localTime.utc.datetime) + ': Sun above the horizon'
+			localTime = Time(eventTime, format='gps')
+			if verbose: print str(localTime.utc.datetime) + ': Sun above the horizon'
+			if verbose: print 'Local time at the site = ' + str((localTime+self.utcoffset).utc.datetime)
 			eventTime = self.advanceToSunset(eventTime, integrationTime)
 			if verbose:
 # 				localTime = Time(eventTime, format='gps') + self.utcoffset
@@ -741,8 +749,9 @@ class Scheduler(RankedTileGenerator):
 		alttiles = []
 		for ii in np.arange(len(scheduled)):
 			tile_obs_times.append(ObsTimes[ii].utc.datetime)
-			print str(ObsTimes[ii].utc.datetime) + '\t' + str(int(scheduled[ii]))
-			altAz_tile = self.tiles[int(scheduled[ii])].transform_to(AltAz(obstime=ObsTimes[ii], location=self.Observatory))
+			if verbose: print str(ObsTimes[ii].utc.datetime) + '\t' + str(int(scheduled[ii]))
+			altAz_tile = self.tiles[int(scheduled[ii])].transform_to(AltAz(obstime=\
+									ObsTimes[ii], location=self.Observatory))
 			alttiles.append(obs_tile_altAz[ii].alt.value)
 			airmass.append(obs_tile_altAz[ii].secz)
 		
@@ -755,8 +764,10 @@ class Scheduler(RankedTileGenerator):
 		venus_dec = np.array(venus_dec)
 		alttiles = np.array(alttiles)
 				
-		df = pd.DataFrame(np.vstack((tile_obs_times, scheduled.astype('int'), pVal_observed, airmass, alttiles, lunar_ilumination)).T,\
-						columns=['Observation_Time', 'Tile_Index', 'Tile_Probs', 'Air_Mass', 'Altitudes', 'Lunar_Ilumination'])
+		df = pd.DataFrame(np.vstack((tile_obs_times, scheduled.astype('int'), pVal_observed,\
+									 airmass, alttiles, lunar_ilumination)).T, columns=\
+									 ['Observation_Time', 'Tile_Index', 'Tile_Probs',\
+									 'Air_Mass', 'Altitudes', 'Lunar_Ilumination'])
 # 		return [scheduled.astype('int'), pVal_observed, sun_ra, 
 # 				sun_dec, moon_ra, moon_dec, lunar_ilumination]
 		return df
@@ -805,7 +816,9 @@ def apparent_from_absolute_mag(absolute_mag, source_dist_parsec):
 		'''
 		return absolute_mag + 5*np.log10(source_dist_parsec/10.)
 
-def detectability(rank, time_per_tile, total_observation_time, absolute_mag, source_dist_parsec, time_data, limmag_data, error_data = None, verbose=False):
+def detectability(rank, time_per_tile, total_observation_time,\
+				  absolute_mag, source_dist_parsec, time_data,\
+				  limmag_data, error_data = None, verbose=False):
 	'''
 	METHOD :: This method takes as input the time allotted per tile, 
 	total observation time allotted for an event, the absolute 
@@ -865,7 +878,8 @@ def detectability(rank, time_per_tile, total_observation_time, absolute_mag, sou
 		samples = 10**5
 		x = np.linspace(apparent_mag, very_large_number, samples, endpoint = True)
 		### If floats are passed to the function, return the answer rightaway
-		if isinstance(mu, (float, np.float, np.float64,)) == True and isinstance(sigma, (float, np.float, np.float64,)) == True:
+		if isinstance(mu, (float, np.float, np.float64,)) == True and\
+		isinstance(sigma, (float, np.float, np.float64,)) == True:
 			y = gaussian_distribution_function(x, mu, sigma)
 			return np.trapz(y,x)
 		# If an array of time_per_tile had been passed
