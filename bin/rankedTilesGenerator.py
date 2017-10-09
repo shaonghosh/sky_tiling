@@ -218,7 +218,8 @@ class RankedTileGenerator:
 
 
 	def plotTiles(self, ranked_tile_indices, allTiles_probs_sorted, tileFile=None, FOV=None,
-				  resolution=None, tileEdges=False, CI=0.9, save=False):
+				  resolution=None, tileEdges=False, CI=0.9, save=False, tag=None, highlight=None,
+				  event=None, title=None):
 		'''
 		METHOD 	:: This method plots the ranked-tiles on a hammer projection
 				   skymap. 
@@ -234,6 +235,10 @@ class RankedTileGenerator:
 
 		resolution  	:: The resolution of the skymap to be used.
 		tileEdges	:: Allows plotting of the tile edges. Default is False.
+		tag 		:: Extra tag to file name
+		highlight	:: Specify the tile index and this tile will be highlighted
+		event		:: [RA, Dec] of the event (for injections)
+		title		:: Title of the plot (optional)
 		'''			
 
 		from utilities import AllSkyMap_basic
@@ -261,15 +266,17 @@ class RankedTileGenerator:
 
 
 		if save:
-			pl.figure(figsize=(80,70))
+			pl.figure(figsize=(60,40))
 			pl.rcParams.update({'font.size': 60})
 		else:
 			pl.rcParams.update({'font.size': 16})
 			pl.figure(figsize=(10,8))
 
-		
+		if title:
+			pl.title(title)
 		m = AllSkyMap_basic.AllSkyMap(projection='hammer')
-		RAP_map, DecP_map = m(ra_CI, dec_CI) 
+		RAP_map, DecP_map = m(ra_CI, dec_CI)
+		if event: RAP_event, DecP_event = m(event[0], event[1])
 		m.drawparallels(np.arange(-90.,120.,20.), color='grey', 
 						labels=[False,True,True,False], labelstyle='+/-')
 		m.drawmeridians(np.arange(0.,420.,30.), color='grey')
@@ -277,10 +284,11 @@ class RankedTileGenerator:
 		lons = np.arange(-150,151,30)
 		if save:
 			m.label_meridians(lons, fontsize=60, vnudge=1, halign='left', hnudge=-1)
+			if event: m.plot(RAP_event, DecP_event, color='b', marker='*', linewidth=0, markersize=50, alpha=1.0) 
 		else:
 			m.label_meridians(lons, fontsize=16, vnudge=1, halign='left', hnudge=-1) 
-		m.plot(RAP_map, DecP_map, 'r.', markersize=3, alpha=0.1) 
-
+		m.plot(RAP_map, DecP_map, color='y', marker='.', linewidth=0, markersize=3, alpha=0.8) 
+		if event: m.plot(RAP_event, DecP_event, color='b', marker='*', linewidth=0, markersize=15, alpha=1.0) 
 		if tileFile is None:
 			tileFile = self.configParser.get('tileFiles', 'tileFile')
 		tileData = np.recfromtxt(tileFile, names=True)
@@ -299,6 +307,29 @@ class RankedTileGenerator:
 
 		if FOV is None:
 			tileEdges = False
+
+		alpha=1.0
+		if highlight:
+			alpha = 0.2
+		if highlight:
+			print RA_tile[highlight], Dec_tile[highlight]
+			RAP_hcenter, DecP_hcenter = m(RA_tile[highlight], Dec_tile[highlight])
+			if tileEdges:
+				[dec_down_h, dec_up_h,\
+				ra_down_left_h, ra_down_right_h,\
+				ra_up_left_h, ra_up_right_h] = getTileBounds(FOV, RA_tile[highlight], Dec_tile[highlight])
+				m.plot(RAP_hcenter, DecP_hcenter, 'co', markersize=4, mew=1)
+				RAP1_h, DecP1_h = m(ra_up_left_h, dec_up_h)
+				RAP2_h, DecP2_h = m(ra_up_right_h, dec_up_h)
+				RAP3_h, DecP3_h = m(ra_down_left_h, dec_down_h)
+				RAP4_h, DecP4_h = m(ra_down_right_h, dec_down_h)
+				m.plot([RAP1_h, RAP2_h], [DecP1_h, DecP2_h],'r-', linewidth=lw*3) 
+				m.plot([RAP2_h, RAP4_h], [DecP2_h, DecP4_h],'r-', linewidth=lw*3) 
+				m.plot([RAP4_h, RAP3_h], [DecP4_h, DecP3_h],'r-', linewidth=lw*3)
+				m.plot([RAP3_h, RAP1_h], [DecP3_h, DecP1_h],'r-', linewidth=lw*3) 
+			else:
+				m.plot(RAP_hcenter, DecP_hcenter, 'co', markersize=5*lw, mew=1)
+
 		for ii in ranked_tile_indices:
 
 			RAP_peak, DecP_peak = m(RA_tile[ii], Dec_tile[ii])
@@ -306,25 +337,26 @@ class RankedTileGenerator:
 				[dec_down, dec_up,
 				ra_down_left, ra_down_right, 
 				ra_up_left, ra_up_right] = getTileBounds(FOV, RA_tile[ii], Dec_tile[ii])
-				m.plot(RAP_peak, DecP_peak, 'k.', markersize=4, mew=1)
+				m.plot(RAP_peak, DecP_peak, 'k.', markersize=4, mew=1, alpha=alpha)
 
 				RAP1, DecP1 = m(ra_up_left, dec_up)
 				RAP2, DecP2 = m(ra_up_right, dec_up)
 				RAP3, DecP3 = m(ra_down_left, dec_down)
 				RAP4, DecP4 = m(ra_down_right, dec_down)
-				m.plot([RAP1, RAP2], [DecP1, DecP2],'k-', linewidth=lw) 
-				m.plot([RAP2, RAP4], [DecP2, DecP4],'k-', linewidth=lw) 
-				m.plot([RAP4, RAP3], [DecP4, DecP3],'k-', linewidth=lw) 
-				m.plot([RAP3, RAP1], [DecP3, DecP1],'k-', linewidth=lw) 
+				m.plot([RAP1, RAP2], [DecP1, DecP2],'k-', linewidth=lw, alpha=alpha) 
+				m.plot([RAP2, RAP4], [DecP2, DecP4],'k-', linewidth=lw, alpha=alpha) 
+				m.plot([RAP4, RAP3], [DecP4, DecP3],'k-', linewidth=lw, alpha=alpha) 
+				m.plot([RAP3, RAP1], [DecP3, DecP1],'k-', linewidth=lw, alpha=alpha) 
 
 			else:
-				m.plot(RAP_peak, DecP_peak, 'ko', markersize=5*lw, mew=1)
+				m.plot(RAP_peak, DecP_peak, 'ko', markersize=5*lw, mew=1, alpha=alpha)
 
 		if save:
 			filenametag = self.configParser.get('plot', 'filenametag')
+			if tag: filenametag = filenametag + '_' + tag
 			extension = self.configParser.get('plot', 'extension')
 			pl.savefig('skyTiles_' + filenametag + '.' + extension)
-	
+		
 		else:
 			pl.show()
 		
@@ -501,8 +533,8 @@ class Scheduler(RankedTileGenerator):
 		self.tileData = np.recfromtxt(self.tileCoord, names=True)
 		self.skymapfile = skymapFile
 		
-		tileObj = RankedTileGenerator(skymapFile, configfile)
-		[self.tileIndices, self.tileProbs] = tileObj.getRankedTiles(resolution=256)
+		self.tileObj = RankedTileGenerator(skymapFile, configfile)
+		[self.tileIndices, self.tileProbs] = self.tileObj.getRankedTiles(resolution=256)
 
 		self.tiles = SkyCoord(ra = self.tileData['ra_center'][self.tileIndices]*u.degree, 
 					    dec = self.tileData['dec_center'][self.tileIndices]*u.degree, 
@@ -758,16 +790,21 @@ class Scheduler(RankedTileGenerator):
 		pVal_observed = np.array(pVal_observed)
 		sun_ra = np.array(sun_ra)
 		sun_dec = np.array(sun_dec)
-		moon_ra = np.array(moon_ra)
-		moon_dec = np.array(moon_dec)
+		moon_ras = np.array(moon_ra)
+		moon_decs = np.array(moon_dec)
+		moonTile = []
+		for moon_ra, moon_dec in zip(moon_ras, moon_decs):
+			moonTile.append(self.tileObj.sourceTile(moon_ra, moon_dec, tileFile=self.tileCoord))
+
 		venus_ra = np.array(venus_ra)
 		venus_dec = np.array(venus_dec)
 		alttiles = np.array(alttiles)
+		moonTile = np.array(moonTile)
 				
 		df = pd.DataFrame(np.vstack((tile_obs_times, scheduled.astype('int'), pVal_observed,\
-									 airmass, alttiles, lunar_ilumination)).T, columns=\
+									 airmass, alttiles, moonTile, lunar_ilumination)).T, columns=\
 									 ['Observation_Time', 'Tile_Index', 'Tile_Probs',\
-									 'Air_Mass', 'Altitudes', 'Lunar_Ilumination'])
+									 'Air_Mass', 'Altitudes', 'Moon-tile', 'Lunar_Ilumination'])
 # 		return [scheduled.astype('int'), pVal_observed, sun_ra, 
 # 				sun_dec, moon_ra, moon_dec, lunar_ilumination]
 		return df
