@@ -219,26 +219,27 @@ class RankedTileGenerator:
 
 	def plotTiles(self, ranked_tile_indices, allTiles_probs_sorted, tileFile=None, FOV=None,
 				  resolution=None, tileEdges=False, CI=0.9, save=False, tag=None, highlight=None,
-				  event=None, title=None):
+				  event=None, title=None, size=None):
 		'''
-		METHOD 	:: This method plots the ranked-tiles on a hammer projection
+		METHOD 		:: This method plots the ranked-tiles on a hammer projection
 				   skymap. 
 		ranked_tile_indices    :: The index of he ranked-tiles
 		allTiles_probs_sorted  :: The probabilities of the ranked-tiles
 		tileFile    :: The file with tile indices and centers
-			       ID	ra_center	dec_center	
-			       1  	24.714290	-85.938460
-			       2  	76.142860	-85.938460
+			       		ID	ra_center	dec_center	
+			       		1  	24.714290	-85.938460
+			       		2  	76.142860	-85.938460
 		
-		FOV		:: Field of view of the telescopes. If not supplied,
-				   tile boundaries will not be plotted.
+		FOV			:: Field of view of the telescopes. If not supplied,
+				   		tile boundaries will not be plotted.
 
-		resolution  	:: The resolution of the skymap to be used.
+		resolution  :: The resolution of the skymap to be used.
 		tileEdges	:: Allows plotting of the tile edges. Default is False.
 		tag 		:: Extra tag to file name
 		highlight	:: Specify the tile index and this tile will be highlighted
 		event		:: [RA, Dec] of the event (for injections)
 		title		:: Title of the plot (optional)
+		size		:: (Optional) Size of the plot if plot show option is used
 		'''			
 
 		from utilities import AllSkyMap_basic
@@ -264,13 +265,14 @@ class RankedTileGenerator:
 		dec_CI = dec[include]
 		pVal_CI = pVal[include]
 
-
+		if not size:
+			size=(15, 12)
 		if save:
 			pl.figure(figsize=(60,40))
 			pl.rcParams.update({'font.size': 60})
 		else:
 			pl.rcParams.update({'font.size': 16})
-			pl.figure(figsize=(10,8))
+			pl.figure(figsize=size)
 
 		if title:
 			pl.title(title)
@@ -312,7 +314,7 @@ class RankedTileGenerator:
 		if highlight:
 			alpha = 0.2
 		if highlight:
-			print RA_tile[highlight], Dec_tile[highlight]
+			print 'Tile center of this pointing: (' + str(RA_tile[highlight])+','+ str(Dec_tile[highlight])+')'
 			RAP_hcenter, DecP_hcenter = m(RA_tile[highlight], Dec_tile[highlight])
 			if tileEdges:
 				[dec_down_h, dec_up_h,\
