@@ -840,7 +840,7 @@ class Scheduler(RankedTileGenerator):
 		moon_decs = np.array(moon_dec)
 		moonTile = []
 		for moon_ra, moon_dec in zip(moon_ras, moon_decs):
-			moonTile.append(self.tileObj.sourceTile(moon_ra, moon_dec, tileFile=self.tileCoord))
+			moonTile.append(self.tileObj.sourceTile(moon_ra, moon_dec))
 
 		venus_ra = np.array(venus_ra)
 		venus_dec = np.array(venus_dec)
