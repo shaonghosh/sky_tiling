@@ -49,6 +49,7 @@ from astropy.table import Table
 from astropy.coordinates import get_sun
 from astropy.coordinates import get_moon
 from astropy.coordinates import get_body
+from astropy.utils.console import ProgressBar
 
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 
@@ -68,7 +69,7 @@ def getTileBounds(FOV, ra_cent, dec_cent):
 
 class RankedTileGenerator:
 		
-	def __init__(self, skymapfile, configfile):
+	def __init__(self, skymapfile, configfile, tileFile=None):
 		'''
 		skymapfile :: The GW sky-localization map for the event
 		path	   :: Path to the preCoputed files
@@ -90,14 +91,16 @@ class RankedTileGenerator:
 		self.skymap = hp.read_map(skymapfile, verbose=False)
 		npix = len(self.skymap)
 		self.nside = hp.npix2nside(npix)
-		
+		if tileFile is None:
+			tileFile = self.configParser.get('tileFiles', 'tileFile')
+		self.tileData = np.recfromtxt(tileFile, names=True)
 		
 		self.preCompDictFiles = {64:preComputed_64, 128:preComputed_128,
 					256:preComputed_256, 512:preComputed_512,
 					1024:preComputed_1024, 2048:preComputed_2048}
 				
 
-	def sourceTile(self, ra, dec, tileFile=None):
+	def sourceTile(self, ra, dec):
 		'''
 		METHOD     :: This method takes the position of the injected 
 					  event and returns the tile index
@@ -110,13 +113,13 @@ class RankedTileGenerator:
 			      2  	76.142860	-85.938460
 			      ...
 		'''
-		if tileFile is None:
-			tileFile = self.configParser.get('tileFiles', 'tileFile')
-		tileData = np.recfromtxt(tileFile, names=True)
+# 		if tileFile is None:
+# 			tileFile = self.configParser.get('tileFiles', 'tileFile')
+# 		tileData = np.recfromtxt(tileFile, names=True)
 
-		Dec_tile = tileData['dec_center']
-		RA_tile = tileData['ra_center']
-		ID = tileData['ID']
+		Dec_tile = self.tileData['dec_center']
+		RA_tile =  self.tileData['ra_center']
+		ID = self.tileData['ID']
 		s = np.arccos( np.sin(np.pi*dec/180.)\
 			* np.sin(np.pi*Dec_tile/180.)\
 			+ np.cos(np.pi*dec/180.)\
@@ -222,7 +225,7 @@ class RankedTileGenerator:
 				  event=None, title=None, size=None):
 		'''
 		METHOD 		:: This method plots the ranked-tiles on a hammer projection
-				   skymap. 
+				       skymap. 
 		ranked_tile_indices    :: The index of he ranked-tiles
 		allTiles_probs_sorted  :: The probabilities of the ranked-tiles
 		tileFile    :: The file with tile indices and centers
@@ -291,13 +294,12 @@ class RankedTileGenerator:
 			m.label_meridians(lons, fontsize=16, vnudge=1, halign='left', hnudge=-1) 
 		m.plot(RAP_map, DecP_map, color='y', marker='.', linewidth=0, markersize=3, alpha=0.8) 
 		if event: m.plot(RAP_event, DecP_event, color='b', marker='*', linewidth=0, markersize=15, alpha=1.0) 
-		if tileFile is None:
-			tileFile = self.configParser.get('tileFiles', 'tileFile')
-		tileData = np.recfromtxt(tileFile, names=True)
-		
-		Dec_tile = tileData['dec_center']
-		RA_tile = tileData['ra_center']
-		ID = tileData['ID']
+# 		if tileFile is None:
+# 			tileFile = self.configParser.get('tileFiles', 'tileFile')
+# 		tileData = np.recfromtxt(tileFile, names=True)
+		Dec_tile = self.tileData['dec_center']
+		RA_tile = self.tileData['ra_center']
+		ID = self.tileData['ID']
 		
 		include_tiles = np.cumsum(allTiles_probs_sorted) < CI
 		include_tiles[np.sum(include_tiles)] = True
@@ -451,6 +453,48 @@ class RankedTileGenerator:
 		
 
 
+	def getSamplesInTiles(self, samples):
+		'''
+		METHOD	:: This method, can be used for any set of indexed points in the sky.
+				   The output is the set of these point indices contained in each tiles.
+				   Potential use, LALinference samples that are present in each tile, or
+				   galaxies from a galaxy catalog that are located within the FOV of each
+				   tile
+
+		samples	::	Just three columns array samples[:,0] = index, samples[:,1] = ra,
+					samples[:,2] = dec
+		'''
+		
+		Dec_tile = self.tileData['dec_center']
+		RA_tile = self.tileData['ra_center']
+		tile_index = self.tileData['ID']-1
+		closestTileIndex = []
+
+		sampleIndex = samples[:,0]
+		sample_ras = samples[:,1]*u.radian
+		sample_decs = samples[:,2]*u.radian
+		
+		
+		with ProgressBar(len(samples)) as bar:
+			for sample, ra, dec in zip(sampleIndex, sample_ras.to(u.degree).value, sample_decs.to(u.degree).value):
+				s = np.arccos( np.sin(np.pi*dec/180.)\
+					* np.sin(np.pi*Dec_tile/180.)\
+					+ np.cos(np.pi*dec/180.)\
+					* np.cos(np.pi*Dec_tile/180.) \
+					* np.cos(np.pi*(RA_tile - ra)/180.) )
+				index = np.argmin(s) ### minimum angular distance index
+				closestTileIndex.append(tile_index[index])
+				bar.update()
+
+		closestTileIndex = np.array(closestTileIndex)
+		uniqueTiles = np.unique(closestTileIndex)
+		samplesInTile = []
+		for tile in uniqueTiles:
+			whereThisTile = tile == closestTileIndex ### pixels indices in this tile
+			samplesInTile.append(sampleIndex[whereThisTile])
+			
+		return [uniqueTiles, samplesInTile]
+			
 
 	def integrationTime(self, T_obs, pValTiles=None, func=None):
 		'''
