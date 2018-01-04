@@ -29,7 +29,7 @@ preComputed_pixel_indices_512.dat to be in the same path.
 
 """
 
-
+import os
 import sys
 import time
 import pickle
@@ -197,7 +197,14 @@ class RankedTileGenerator:
 		if verbose: print 'Using resolution of ' + str(resolution)
 		filename = self.preCompDictFiles[resolution]
 		if verbose: print filename
+		if not os.path.isfile(filename):
+			if verbose: print "Precomputed pickle file for this resolution is not found"
+			if verbose: print "Reverting to default resolution (= 256)"
+			resolution = 256
+			filename = self.preCompDictFiles[resolution]
+
 		File = open(filename, 'rb')
+			
 		data = pickle.load(File)
 		tile_index = np.arange(len(data))
 		skymapUD = hp.ud_grade(self.skymap, resolution, power=-2)
@@ -568,12 +575,13 @@ class Scheduler(RankedTileGenerator):
 	the second should be the tile center's ra value and the third the dec value of the 
 	same. The utcoffset is the time difference between UTC and the site in hours. 
 	'''
-	def __init__(self, skymapFile, configfile, site='Palomar', utcoffset = -7.0):
+	def __init__(self, skymapFile, configfile, site=None):
 
 		configParser = ConfigParser.ConfigParser()
 		configParser.read(configfile)
 
 		self.tileCoord = configParser.get('tileFiles', 'tileFile')
+		site = configParser.get('observation', 'site')
 
 		self.Observatory = EarthLocation.of_site(site)
 		self.tileData = np.recfromtxt(self.tileCoord, names=True)
@@ -585,8 +593,6 @@ class Scheduler(RankedTileGenerator):
 		self.tiles = SkyCoord(ra = self.tileData['ra_center'][self.tileIndices]*u.degree, 
 					    dec = self.tileData['dec_center'][self.tileIndices]*u.degree, 
 					    frame = 'icrs') ### Tile(s)
-		self.utcoffset = utcoffset*u.hour
-
 
 	def tileVisibility(self, t, gps=False):
 		'''
@@ -673,7 +679,6 @@ class Scheduler(RankedTileGenerator):
 		
 		'''
 		
-# 		eventTime = eventTime + (self.utcoffset).to(u.s).value
 		includeTiles = np.cumsum(self.tileProbs) < CI
 		includeTiles[np.sum(includeTiles)] = True
 		
@@ -693,21 +698,20 @@ class Scheduler(RankedTileGenerator):
 		sun_dec = []
 		moon_ra = []
 		moon_dec = []
-		venus_ra = []
-		venus_dec = []
-		lunar_ilumination = []
+		lunar_illumination = []
 		
 		
 		
 		[_, _, _, altAz_sun] = self.tileVisibility(eventTime, gps=True)
+		## This will be changed in the future. The argument of time that 
+		## will be passed should be an astropy time quantity so that there
+		## is no need to specify what kind of time format is used.
 		
 		if altAz_sun.alt.value >= -18.0:
-			localTime = Time(eventTime, format='gps')
+			localTime = Time(eventTime, format='gps') ## This variable name is incorrect!
 			if verbose: print str(localTime.utc.datetime) + ': Sun above the horizon'
-			if verbose: print 'Local time at the site = ' + str((localTime+self.utcoffset).utc.datetime)
 			eventTime = self.advanceToSunset(eventTime, integrationTime)
 			if verbose:
-# 				localTime = Time(eventTime, format='gps') + self.utcoffset
 				localTime = Time(eventTime, format='gps')
 				print 'Advancing time to ' + str(localTime.utc.datetime)
 				print '\n'
@@ -715,8 +719,7 @@ class Scheduler(RankedTileGenerator):
 		
 		while elapsedTime <= duration: 
 			[tileIndices, tileProbs, altAz_tile, altAz_sun] = self.tileVisibility(eventTime, gps=True)
-# 			localTime = Time(eventTime, format='gps') + self.utcoffset
-			localTime = Time(eventTime, format='gps')
+			localTime = Time(eventTime, format='gps') ## This variable name is incorrect!
 			
 			if altAz_sun.alt.value < -18.0: 
 				if verbose: 
@@ -739,7 +742,7 @@ class Scheduler(RankedTileGenerator):
 							illumination = 0.5*(1.0 + np.cos(phaseAngle))
 							
 							if verbose: print 'Lunar illumination = ' + str(illumination)
-							lunar_ilumination.append(illumination)
+							lunar_illumination.append(illumination)
 							
 							moon_ra.append(Moon.ra.value)
 							moon_dec.append(Moon.dec.value)
@@ -748,12 +751,10 @@ class Scheduler(RankedTileGenerator):
 				
 			else:
 				if verbose: 
-# 					localTime = Time(eventTime, format='gps') + self.utcoffset
 					localTime = Time(eventTime, format='gps')
 					print str(localTime.utc.datetime) + ': Sun above the horizon'
 				eventTime = self.advanceToSunset(eventTime, integrationTime)
 				if verbose:
-# 					localTime = Time(eventTime, format='gps') + self.utcoffset
 					localTime = Time(eventTime, format='gps')
 					print 'Advancing time to ' + str(localTime.utc.datetime)
 					print '\n'
@@ -777,7 +778,6 @@ class Scheduler(RankedTileGenerator):
 # 			print '**** Elapsed time = ' + str(elapsedTime) + '****'
 # 			[tileIndices, tileProbs, altAz_sun] = self.tileVisibility(eventTime,
 # 																		 gps=True)
-# 			localTime = Time(eventTime, format='gps') + self.utcoffset
 # 			
 # 
 # 			
@@ -804,7 +804,7 @@ class Scheduler(RankedTileGenerator):
 # 							illumination = 0.5*(1.0 + np.cos(phaseAngle))
 # 							
 # 							if verbose: print 'Lunar illumination = ' + str(illumination)
-# 							lunar_ilumination.append(illumination)
+# 							lunar_illumination.append(illumination)
 # 							
 # 							moon_ra.append(Moon.ra.value)
 # 							moon_dec.append(Moon.dec.value)
@@ -812,11 +812,9 @@ class Scheduler(RankedTileGenerator):
 # 
 # 			else:
 # 				if verbose: 
-# 					localTime = Time(eventTime, format='gps') + self.utcoffset
 # 					print str(localTime.utc.datetime) + ': Sun above the horizon'
 # 				eventTime = self.advanceToSunset(eventTime, integrationTime)
 # 				if verbose:
-# 					localTime = Time(eventTime, format='gps') + self.utcoffset
 # 					print 'Advancing time to ' + str(localTime.utc.datetime)
 # 					print '\n'
 
@@ -842,17 +840,38 @@ class Scheduler(RankedTileGenerator):
 		for moon_ra, moon_dec in zip(moon_ras, moon_decs):
 			moonTile.append(self.tileObj.sourceTile(moon_ra, moon_dec))
 
-		venus_ra = np.array(venus_ra)
-		venus_dec = np.array(venus_dec)
 		alttiles = np.array(alttiles)
 		moonTile = np.array(moonTile)
-				
-		df = pd.DataFrame(np.vstack((tile_obs_times, scheduled.astype('int'), pVal_observed,\
-									 airmass, alttiles, moonTile, lunar_ilumination)).T, columns=\
-									 ['Observation_Time', 'Tile_Index', 'Tile_Probs',\
-									 'Air_Mass', 'Altitudes', 'Moon-tile', 'Lunar_Ilumination'])
-# 		return [scheduled.astype('int'), pVal_observed, sun_ra, 
-# 				sun_dec, moon_ra, moon_dec, lunar_ilumination]
+		
+		## TODO: Include slewing angle w.r.t previous tile.
+		## Angular separation = arccos(sin(dec1)*sin(dec2) + (cos(dec1)*cos(dec2)*cos(ra1 - ra2))
+		self.tileData['ID']
+		RA_scheduled_tile = np.deg2rad(self.tileData['ra_center']\
+							[np.isin(self.tileData['ID'], scheduled.astype('int'))])
+		Dec_scheduled_tile = np.deg2rad(self.tileData['dec_center']\
+							[np.isin(self.tileData['ID'], scheduled.astype('int'))])
+		RA_Moontile = np.deg2rad(self.tileData['ra_center']\
+					  [np.isin(self.tileData['ID'], moonTile)])
+		Dec_Moontile = np.deg2rad(self.tileData['dec_center']\
+					  [np.isin(self.tileData['ID'], moonTile)])
+
+		moonTileDist = np.rad2deg(np.arccos(np.sin(Dec_scheduled_tile)*np.sin(Dec_Moontile) +\
+					  (np.cos(Dec_scheduled_tile)*np.cos(Dec_Moontile)*\
+					  np.cos(RA_scheduled_tile - RA_Moontile))))
+
+		## Slewing angle computation ##
+		slewDist = [0.0]
+		for ii in range(1, len(tile_obs_times)):
+			slewDist.append(np.rad2deg(np.arccos(np.sin(Dec_scheduled_tile[ii])*np.sin(Dec_scheduled_tile[ii-1]) +\
+					  (np.cos(Dec_scheduled_tile[ii])*np.cos(Dec_scheduled_tile[ii-1])*\
+					  np.cos(RA_scheduled_tile[ii] - RA_scheduled_tile[ii-1])))))
+
+
+		slewDist = np.array(slewDist)
+		df = pd.DataFrame(np.vstack((tile_obs_times, scheduled.astype('int'), pVal_observed, slewDist,\
+									 airmass, moonTile, moonTileDist, lunar_illumination)).T, columns=\
+									 ['Observation_Time', 'Tile_Index', 'Tile_Probs', 'Slew Angle (deg)',\
+									 'Air_Mass', 'Moon-tile', 'Lunar-tile separation (deg)', 'Lunar_Illumination'])
 		return df
 
 
@@ -865,7 +884,7 @@ class Scheduler(RankedTileGenerator):
 
 
 
-####################END OF CLASS METHODS########################
+#################### END OF CLASS METHODS ########################
 
 
 def evolve_abs_Mag(dt, model, offset=0):	### UNDERDEVELOPMENT ###

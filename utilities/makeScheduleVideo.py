@@ -130,7 +130,7 @@ class MakeVideo:
 		FOV		:: Field-of-view of the telescope
 		event	:: (injections) Location of the event
 	
-		fr		:: Frame rate of the vide (Default=4)
+		fr		:: Frame rate of the video (Default=4)
 		'''	
 		pointedTiles = self.df['Tile_Index']
 		timeStamps = Time(self.df['Observation_Time']).gps.astype('int')
@@ -148,14 +148,14 @@ class MakeVideo:
 		os.system(command)
 		if not keepdata:
 			os.system('rm -rf schedule_output')
-							  
-							  
-							  
-							  
-							  
-							  
-							  
-							  
-							  
-							  
-							  
+
+
+
+
+
+
+
+
+
+
+
