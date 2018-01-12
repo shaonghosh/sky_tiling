@@ -7,7 +7,7 @@
 2. Astropy (>1.3)
 3. Healpy
 4. Matplotlib
-5. Numpy
+5. Numpy (< 1.14)
 6. Scipy
 
 ## Installation ##
