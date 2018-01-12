@@ -131,7 +131,7 @@ class RankedTileGenerator:
 		return ID[index] - 1 ### Since the indexing begins with 1.
 
 	
-	def searchedArea(self, ra, dec, resolution=None):
+	def searchedArea(self, ra, dec, resolution=None, verbose=False):
 		'''
 		METHOD     :: This method takes the position of the injected 
 			      event and the sky-map. It returns the searched 
@@ -145,6 +145,7 @@ class RankedTileGenerator:
 		dec		   :: Declination angle of the source in degrees
 		resolution 	   :: The value of the nside, if not supplied, 
 				      the default skymap is used.
+		output     :: [Searched area, Searched Probability]
 		'''
 		if not resolution:
 			resolution = self.nside
@@ -153,6 +154,12 @@ class RankedTileGenerator:
 		if resolution > 2048: resolution = 2048
 		if resolution < 64: resolution = 64
 		filename = self.preCompDictFiles[resolution]
+		if not os.path.isfile(filename):
+			if verbose: print "Precomputed pickle file for this resolution is not found"
+			if verbose: print "Reverting to default resolution (= 256)"
+			resolution = 256
+			filename = self.preCompDictFiles[resolution]
+
 		File = open(filename, 'rb')
 		data = pickle.load(File)
 		tile_index = np.arange(len(data))
@@ -843,7 +850,6 @@ class Scheduler(RankedTileGenerator):
 		alttiles = np.array(alttiles)
 		moonTile = np.array(moonTile)
 		
-		## TODO: Include slewing angle w.r.t previous tile.
 		## Angular separation = arccos(sin(dec1)*sin(dec2) + (cos(dec1)*cos(dec2)*cos(ra1 - ra2))
 		self.tileData['ID']
 		RA_scheduled_tile = np.deg2rad(self.tileData['ra_center']\
@@ -859,6 +865,10 @@ class Scheduler(RankedTileGenerator):
 					  (np.cos(Dec_scheduled_tile)*np.cos(Dec_Moontile)*\
 					  np.cos(RA_scheduled_tile - RA_Moontile))))
 
+		moonDist = np.rad2deg(np.arccos(np.sin(Dec_scheduled_tile)*np.sin(np.deg2rad(moon_decs)) +\
+					  (np.cos(Dec_scheduled_tile)*np.cos(np.deg2rad(moon_decs))*\
+					  np.cos(RA_scheduled_tile - np.deg2rad(moon_ras)))))
+
 		## Slewing angle computation ##
 		slewDist = [0.0]
 		for ii in range(1, len(tile_obs_times)):
@@ -869,9 +879,10 @@ class Scheduler(RankedTileGenerator):
 
 		slewDist = np.array(slewDist)
 		df = pd.DataFrame(np.vstack((tile_obs_times, scheduled.astype('int'), pVal_observed, slewDist,\
-									 airmass, moonTile, moonTileDist, lunar_illumination)).T, columns=\
-									 ['Observation_Time', 'Tile_Index', 'Tile_Probs', 'Slew Angle (deg)',\
-									 'Air_Mass', 'Moon-tile', 'Lunar-tile separation (deg)', 'Lunar_Illumination'])
+									 airmass, moonTile, moonTileDist, moonDist, lunar_illumination)).T,\
+									 columns=['Observation_Time', 'Tile_Index', 'Tile_Probs', 'Slew Angle (deg)',\
+									 'Air_Mass', 'Lunar-tile', 'Lunar-tile separation (deg)', 'Lunar separation (deg)',\
+									 'Lunar_Illumination'])
 		return df
 
 
